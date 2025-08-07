@@ -4,7 +4,7 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Footer from "../components/Footer.jsx";
-import HomeCarousel from "../components/Carousel/HomeCarousel.jsx";
+import HomeCarousel from "../components/carousel/HomeCarousel.jsx";
 import Navbar from "../components/Navbar.jsx";
 import ProductCard from "../components/ProductCard.jsx";
 export default function HomePage() {
