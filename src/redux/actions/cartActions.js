@@ -30,7 +30,7 @@ if (!token) {
 try {
  
   const response = await axios.post(
-    "http://localhost:2000/api/cart/add",
+    "https://mustaab.onrender.com/api/cart/add",
     { productId,
        name,
        discount,
@@ -74,7 +74,7 @@ export const updateCart = (productId, qty) => async (dispatch, getState) => {
   }
   try {
     const response = await axios.put(
-      "http://localhost:2000/api/cart/update",
+      "https://mustaab.onrender.com/api/cart/update",
       { productId, qty ,maxQuantity}, // Send product ID and quantity
       {
         headers: {

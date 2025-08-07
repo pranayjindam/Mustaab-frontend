@@ -33,7 +33,7 @@ export const fetchProducts = createAsyncThunk(
   "products/fetchProducts",
   async () => {
     try {
-      const response = await axios.get("http://localhost:2000/api/product/all");
+      const response = await axios.get("https://mustaab.onrender.com/api/product/all");
       return response.data.products;
     } catch (error) {
       throw new Error(error.message);
@@ -46,7 +46,7 @@ export const fetchProductsByCategory = createAsyncThunk(
   "products/fetchProductsByCategory",
   async (category) => {
     try {
-      const response = await axios.get(`http://localhost:2000/api/product/${category}`);
+      const response = await axios.get(`https://mustaab.onrender.com/api/product/${category}`);
       return { category, products: response.data.products };
     } catch (error) {
       throw new Error(error.message);

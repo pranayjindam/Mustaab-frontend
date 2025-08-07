@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'http://localhost:2000/api', // change if hosted elsewhere
+  baseURL: 'https://mustaab.onrender.com', // change if hosted elsewhere
 });
 
 API.interceptors.request.use((req) => {
