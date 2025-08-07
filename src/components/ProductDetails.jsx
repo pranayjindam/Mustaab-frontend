@@ -7,14 +7,14 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "@heroicons/react/24/solid";
-import { fetchProducts } from "../../../redux/productSlice.js";
+import { fetchProducts } from "../redux/productSlice.js";
 import Footer from "./Footer.jsx";
 import { Zoom, ToastContainer, toast } from "react-toastify";
 import {
   addToCartRequest,
   addToCartSuccess,
   addToCartFailure,
-} from "../../../redux/cartSlice.js";
+} from "../redux/cartSlice.js";
 
 export default function ProductDetails() {
   const dispatch = useDispatch();

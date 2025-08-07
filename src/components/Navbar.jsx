@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Fragment, useState } from 'react';
 import { FaUser } from "react-icons/fa";
-import { logout } from "../../../redux/authSlice.js";
+import { logout } from "../redux/authSlice.js";
 import { useDispatch, useSelector } from 'react-redux';
 
 import {
