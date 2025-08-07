@@ -19,7 +19,7 @@ export default function HomePage() {
       setError(null);
 
       try {
-        const catRes = await fetch("https:/mustaab.onrender.com/api/product/categories");
+        const catRes = await fetch("https://mustaab.onrender.com/api/product/categories");
         const catData = await catRes.json();
 
         if (!catData.success || !Array.isArray(catData.categories)) {
@@ -31,7 +31,7 @@ export default function HomePage() {
         const newProducts = {};
         for (let category of catData.categories) {
           try {
-            const res = await fetch(`https:mustaab.onrender.com/api/product/category/${category}`);
+            const res = await fetch(`https://mustaab.onrender.com/api/product/category/${category}`);
             const data = await res.json();
 
             if (!data.success || !Array.isArray(data.products)) {
