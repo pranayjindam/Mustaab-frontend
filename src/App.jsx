@@ -4,7 +4,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 // Pages
 import Login from "./Pages/Login.jsx";
 import Register from "./Pages/Register.jsx";
-import HomePage from "./Pages/customer/Pages/HomePage.jsx";
+import HomePage from "./";
 import ProductDetails from "./Pages/customer/components/ProductDetails.jsx";
 import Cart from "./Pages/customer/components/Cart.jsx";
 import CheckOut from "./Pages/customer/components/checkout/CheckOut.jsx";
