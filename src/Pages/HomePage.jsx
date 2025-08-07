@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import Footer from "../Components/Footer.jsx";
-import HomeCarousel from "../Components/Carousel/HomeCarousel.jsx";
-import Navbar from "../Components/Navbar.jsx";
-import ProductCard from "../Components/ProductCard.jsx";
+import Footer from "../components/Footer.jsx";
+import HomeCarousel from "../components/Carousel/HomeCarousel.jsx";
+import Navbar from "../components/Navbar.jsx";
+import ProductCard from "../components/ProductCard.jsx";
 export default function HomePage() {
   const [categories, setCategories] = useState([]);
   const [productsByCategory, setProductsByCategory] = useState({});

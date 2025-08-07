@@ -5,10 +5,10 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./Pages/Login.jsx";
 import Register from "./Pages/Register.jsx";
 import HomePage from "./Pages/HomePage.jsx";
-import ProductDetails from "./Pages/customer/components/ProductDetails.jsx";
-import Cart from "./Pages/customer/components/Cart.jsx";
-import CheckOut from "./Pages/customer/components/checkout/CheckOut.jsx";
-import OrderSuccess from "./Pages/customer/components/Checkout/OrderSuccess.jsx";
+import ProductDetails from "./components/ProductDetails.jsx";
+import Cart from "./components/Cart.jsx";
+import CheckOut from "./components/checkout/CheckOut.jsx";
+import OrderSuccess from "./components/checkout/OrderSuccess.jsx";
 import './App.css';
 
 // Utils
