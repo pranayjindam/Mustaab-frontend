@@ -19,7 +19,7 @@ export default function HomePage() {
       setError(null);
 
       try {
-        const catRes = await fetch("https://mustaab.onrender.com/api/product/categories");
+        const catRes = await fetch("https:/mustaab.onrender.com/api/product/categories");
         const catData = await catRes.json();
 
         if (!catData.success || !Array.isArray(catData.categories)) {
