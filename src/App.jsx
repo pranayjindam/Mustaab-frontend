@@ -2,15 +2,13 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 // Pages
-import Login from "./pages/Login";
-import Signin from "./pages/Register";
-import Register from "./pages/Register";
-import AdminDashboard from "../../dashboard/src/Admin/AdminDashboard";
-import HomePage from "./Pages/customer/pages/HomePage";
-import ProductDetails from "./Pages/customer/components/ProductDetails";
-import Cart from "./Pages/customer/components/Cart";
-import CheckOut from "./Pages/customer/components/checkout/CheckOut";
-import OrderSuccess from "./Pages/customer/components/checkout/OrderSuccess";
+import Login from "./Pages/Login.jsx";
+import Register from "./Pages/Register.jsx";
+import HomePage from "./Pages/customer/Pages/HomePage.jsx";
+import ProductDetails from "./Pages/customer/Components/ProductDetails.jsx";
+import Cart from "./Pages/customer/Components/Cart.jsx";
+import CheckOut from "./Pages/customer/Components/Checkout/CheckOut.jsx";
+import OrderSuccess from "./Pages/customer/Components/Checkout/OrderSuccess.jsx";
 import './App.css';
 
 // Utils

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; // ⬅️ Import navigate
-import Footer from "./Footer";
+import Footer from "../Components/Footer.js";
 
 export default function Cart() {
   const [cartItems, setCartItems] = useState([]);

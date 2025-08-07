@@ -3,7 +3,7 @@ import axios from "axios";
 import { useLocation } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import RazorpayPayment from "../checkout/HandleUpiPayment";
+import RazorpayPayment from "./HandleUpiPayment";
 import CheckOutProduct from "./CheckOutProduct";
 
 const CheckOut = () => {
