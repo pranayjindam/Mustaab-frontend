@@ -45,7 +45,6 @@ export default function App() {
       <Route path="/signin" element={<RedirectIfLoggedIn><Login /></RedirectIfLoggedIn>} />
       <Route path="/register" element={<RedirectIfLoggedIn><Register /></RedirectIfLoggedIn>} />
       <Route path="/cart" element={<RedirectIfLoggedIn><Cart/></RedirectIfLoggedIn>}/>
-      <Route path="/admin" element={<ProtectedRoute allowedRole="ADMIN"><AdminDashboard /></ProtectedRoute>} />
       <Route path="/product/:id" element={<ProductDetails />} />
       <Route path="*" element={<Navigate to="/" />} />
       <Route path="/checkout" element={<RedirectIfLoggedIn><CheckOut/></RedirectIfLoggedIn>}/>
