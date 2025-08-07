@@ -1,0 +1,150 @@
+@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+Carousel{
+    position: relative;
+    top: 100px;
+}
+  
+/* In index.css or global.css */
+body {
+    overflow-x: hidden;
+  }
+  /* Amazon-style category section */
+.category-container {
+  background: white;
+  margin: 20px auto;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  width: 95%;
+}
+
+.category-title {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  padding-left: 10px;
+  color: #222;
+}
+
+/* Full-width product carousel box */
+.carousel-box {
+  padding: 10px;
+  background: #f8f8f8;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Product card inside the carousel */
+.product-card {
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  transition: transform 0.3s;
+}
+
+.product-card:hover {
+  transform: scale(1.05);
+}
+
+.product-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.product-info {
+  margin-top: 10px;
+}
+
+.product-info h3 {
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Short product description */
+.product-description {
+  font-size: 12px;
+  color: #555;
+  margin-top: 4px;
+  height: 36px; /* To keep it uniform */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.price {
+  font-size: 16px;
+  font-weight: bold;
+  color: #e60000;
+  margin-top: 5px;
+}
+
+/* Star ratings */
+.ratings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 5px;
+}
+
+.star {
+  color: #ccc;
+  font-size: 14px;
+  margin: 0 2px;
+}
+
+.star.filled {
+  color: #ffcc00;
+}
+
+/* Custom Arrows */
+.custom-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
+  color: black;
+}
+
+.custom-arrow:hover {
+  background: rgba(255, 255, 255, 1);
+}
+
+.next {
+  right: -20px;
+}
+
+.prev {
+  left: -20px;
+}
+
+@media (max-width: 768px) {
+  .custom-arrow {
+    display: none !important;
+  }
+}
