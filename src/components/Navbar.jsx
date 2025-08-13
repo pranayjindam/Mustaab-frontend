@@ -1,104 +1,49 @@
-import { Link } from 'react-router-dom';
+import { logout } from "../redux/authSlice";
+import { clearCartSuccess } from "../redux/cartSlice"; // ✅ import clearCartSuccess
+import { Link,useNavigate } from 'react-router-dom';
 import { Fragment, useState } from 'react';
 import { FaUser } from "react-icons/fa";
-import { logout } from "../redux/authSlice.js";
+import { logout as logoutAction } from "../redux/authSlice.js";
 import { useDispatch, useSelector } from 'react-redux';
-
 import {
   Popover,
   PopoverButton,
   PopoverGroup,
   PopoverPanel,
 } from '@headlessui/react';
-import { Bars3Icon, MagnifyingGlassIcon, ShoppingBagIcon } from '@heroicons/react/24/outline';
+import { Bars3Icon, XMarkIcon, MagnifyingGlassIcon, ShoppingBagIcon } from '@heroicons/react/24/outline';
 
-const navigation = {
-  categories: [
-    {
-      id: 'women',
-      name: 'Women',
-      featured: [
-        {
-          name: 'New Arrivals',
-          href: '/women/new',
-          imageSrc: 'https://tailwindui.com/plus/img/ecommerce-images/mega-menu-category-01.jpg',
-          imageAlt: 'Models sitting back to back, wearing Basic Tee in black and bone.',
-        },
-        {
-          name: 'Basic Tees',
-          href: '/women/tees',
-          imageSrc: 'https://tailwindui.com/plus/img/ecommerce-images/mega-menu-category-02.jpg',
-          imageAlt: 'Close up of Basic Tee fall bundle.',
-        },
-      ],
-      sections: [
-        {
-          id: 'clothing',
-          name: 'Clothing',
-          items: [
-            { name: 'Tops', href: '/women/tops' },
-            { name: 'Dresses', href: '/women/dresses' },
-            { name: 'Pants', href: '/women/pants' },
-            { name: 'Denim', href: '/women/denim' },
-            { name: 'Sweaters', href: '/women/sweaters' },
-            { name: 'T-Shirts', href: '/women/tshirts' },
-            { name: 'Jackets', href: '/women/jackets' },
-            { name: 'Activewear', href: '/women/activewear' },
-            { name: 'Browse All', href: '/women' },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'men',
-      name: 'Men',
-      featured: [
-        {
-          name: 'New Arrivals',
-          href: '/men/new',
-          imageSrc: 'https://tailwindui.com/plus/img/ecommerce-images/product-page-04-detail-product-shot-01.jpg',
-          imageAlt: 'Drawstring top with elastic loop closure.',
-        },
-      ],
-      sections: [
-        {
-          id: 'clothing',
-          name: 'Clothing',
-          items: [
-            { name: 'Tops', href: '/men/tops' },
-            { name: 'Pants', href: '/men/pants' },
-            { name: 'Sweaters', href: '/men/sweaters' },
-            { name: 'T-Shirts', href: '/men/tshirts' },
-            { name: 'Jackets', href: '/men/jackets' },
-            { name: 'Activewear', href: '/men/activewear' },
-            { name: 'Browse All', href: '/men' },
-          ],
-        },
-      ],
-    },
-  ],
-  pages: [
-    { name: 'Company', href: '/company' },
-    { name: 'Stores', href: '/stores' },
-  ],
-};
 
 export default function Navbar() {
-  const [open, setOpen] = useState(false);
+  const navigation = {
+    categories: [
+      // ... your existing categories unchanged ...
+    ],
+    pages: [
+      { name: 'Company', href: '/company' },
+      { name: 'Stores', href: '/stores' },
+    ],
+  };
+  const navigate = useNavigate();
+  
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
 
-  // ✅ Optimized selector to prevent re-render warnings
   const cartLength = useSelector(
     (state) =>
       state.cart?.cart?.reduce((total, item) => total + (item.quantity || 0), 0) || 0
   );
+
 const handleLogout = () => {
-  const logout = confirm("Do you want to Logout?");
-  if (logout) {
-    dispatch(logout());
+  const confirmLogout = confirm("Do you want to Logout?");
+  if (confirmLogout) {
+    dispatch(logout());          
+    dispatch(clearCartSuccess()); 
+    localStorage.removeItem("token"); // ✅ match login storage key
+    navigate("/signin"); // optional: send to login after logout
   }
 };
 
@@ -112,11 +57,17 @@ const handleLogout = () => {
       <nav className="sticky top-0 bg-white shadow z-50">
         <div className="border-b border-gray-200">
           <div className="flex h-16 items-center justify-between px-4">
-            {/* Left: logo + menu */}
+            {/* Left: logo + mobile menu button */}
             <div className="flex items-center">
-              <button onClick={() => setOpen(true)} className="lg:hidden">
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="lg:hidden"
+              >
                 <Bars3Icon className="h-6 w-6 text-gray-600" />
               </button>
+
+              {/* Logo */}
               <Link to="/" className="ml-4">
                 <img
                   src="https://tailwindui.com/plus/img/logos/mark.svg?color=indigo&shade=600"
@@ -124,6 +75,8 @@ const handleLogout = () => {
                   alt="Mustaab"
                 />
               </Link>
+
+              {/* Desktop Categories */}
               <PopoverGroup className="hidden lg:flex ml-8">
                 {navigation.categories.map((category) => (
                   <Popover key={category.id} className="relative">
@@ -137,6 +90,7 @@ const handleLogout = () => {
                           {category.name}
                         </PopoverButton>
                         <PopoverPanel className="absolute z-10 top-full left-0 w-screen max-w-6xl p-6 bg-white shadow-lg grid grid-cols-3 gap-6">
+                          {/* Featured images */}
                           <div>
                             {category.featured.map((item) => (
                               <Link to={item.href} key={item.name} className="block text-sm">
@@ -145,6 +99,7 @@ const handleLogout = () => {
                               </Link>
                             ))}
                           </div>
+                          {/* Sections */}
                           <div className="col-span-2 grid grid-cols-2 gap-4">
                             {category.sections.map((section) => (
                               <div key={section.id}>
@@ -169,19 +124,20 @@ const handleLogout = () => {
               </PopoverGroup>
             </div>
 
-            {/* Right: Icons */}
-            <div className="flex items-center gap-6">
+            {/* Right: Desktop Icons */}
+            <div className="hidden lg:flex items-center gap-6">
               <Link to="/search" className="text-gray-500 hover:text-gray-700">
                 <MagnifyingGlassIcon className="h-6 w-6" />
               </Link>
-              <Link to="/cart" className="relative">
-                <ShoppingBagIcon className="h-6 w-6 text-gray-500 hover:text-gray-700" />
-                {cartLength > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1">
-                    {cartLength}
-                  </span>
-                )}
-              </Link>
+          <Link to="/cart">
+  <ShoppingBagIcon className="h-6 w-6 text-gray-500 hover:text-gray-700" />
+  {cartLength > 0 && (
+    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1">
+      {cartLength}
+    </span>
+  )}
+</Link>
+
               {!user ? (
                 <>
                   <Link to="/signin" className="text-sm hover:text-gray-700">
@@ -219,6 +175,54 @@ const handleLogout = () => {
           </div>
         </div>
       </nav>
+
+      {/* Mobile Menu Panel */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 lg:hidden">
+          <div className="bg-white w-72 h-full shadow-md p-4">
+            {/* Close Button */}
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="mb-4 flex items-center gap-2"
+            >
+              <XMarkIcon className="h-6 w-6" /> Close
+            </button>
+
+            {/* Links */}
+            <div className="flex flex-col gap-4">
+              {navigation.categories.map((cat) => (
+                <div key={cat.id}>
+                  <p className="font-semibold">{cat.name}</p>
+                  {cat.sections.map((section) => (
+                    <ul key={section.id} className="pl-4 mt-1 space-y-1">
+                      {section.items.map((item) => (
+                        <li key={item.name}>
+                          <Link to={item.href} onClick={() => setMobileMenuOpen(false)}>
+                            {item.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ))}
+                </div>
+              ))}
+              <hr />
+              {!user ? (
+                <>
+                  <Link to="/signin" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
+                  <Link to="/register" onClick={() => setMobileMenuOpen(false)}>Create Account</Link>
+                </>
+              ) : (
+                <>
+                  <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>Profile</Link>
+                  <Link to="/orders" onClick={() => setMobileMenuOpen(false)}>Orders</Link>
+                  <button onClick={() => { handleLogout(); setMobileMenuOpen(false); }}>Logout</button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

@@ -1,16 +1,27 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import AliceCarousel from "react-alice-carousel";
 import "react-alice-carousel/lib/alice-carousel.css";
-import { homeCarouselData } from "./HomeCaroselData";
 import { useNavigate } from "react-router-dom";
-import './Carousel.css'
+import axios from "axios";
+
 const handleDragStart = (e) => e.preventDefault();
 
 const HomeCarousel = () => {
   const navigate = useNavigate();
-  const carouselRef = useRef(null); // Reference for the carousel
+  const carouselRef = useRef(null);
+  const [carouselData, setCarouselData] = useState([]);
 
-  const items = homeCarouselData.map((item) => (
+  useEffect(() => {
+    axios.get("https://mustaab.onrender.com/api/carousel/get")
+      .then(res => {
+        if (res.data.success) {
+          setCarouselData(res.data.data);
+        }
+      })
+      .catch(err => console.error(err));
+  }, []);
+
+  const items = carouselData.map((item) => (
     <img
       className="cursor-pointer"
       onClick={() => navigate(item.path)}
@@ -18,17 +29,12 @@ const HomeCarousel = () => {
       alt=""
       onDragStart={handleDragStart}
       role="presentation"
-      key={item.path}
+      key={item._id}
     />
   ));
 
-  const handlePrev = () => {
-    carouselRef.current?.slidePrev(); // Navigate to the previous slide
-  };
-
-  const handleNext = () => {
-    carouselRef.current?.slideNext(); // Navigate to the next slide
-  };
+  const handlePrev = () => carouselRef.current?.slidePrev();
+  const handleNext = () => carouselRef.current?.slideNext();
 
   return (
     <div className="relative">

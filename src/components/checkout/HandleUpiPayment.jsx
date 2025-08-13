@@ -1,12 +1,14 @@
+// src/pages/HandleUpiPayment.jsx
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useEffect } from "react";
 import { toast } from "react-toastify";
-import OrderSuccess from "./OrderSuccess";
-import { useNavigate } from "react-router-dom";
+import OrderSuccess from "./OrderSuccess.jsx"; // create a simple success component
 
-const HandleUpiPayment = ({ amount, onSuccess, userData, products, selectedAddress }) => {
+const HandleUpiPayment = ({ amount, userData, products, selectedAddress }) => {
+  const [verified, setVerified] = useState(false);
+
   useEffect(() => {
-    if (typeof window.Razorpay === "undefined") {
+    if (!window.Razorpay) {
       const script = document.createElement("script");
       script.src = "https://checkout.razorpay.com/v1/checkout.js";
       script.async = true;
@@ -17,123 +19,86 @@ const HandleUpiPayment = ({ amount, onSuccess, userData, products, selectedAddre
   const handlePayment = async () => {
     try {
       const token = localStorage.getItem("token");
- const [verified, setVerified] = useState(false);
-      if (!token) {
-        toast.error("User not authenticated");
-        return;
-      }
+      if (!token) return toast.error("User not authenticated");
+      if (!amount || amount < 1) return toast.error("Amount must be at least ₹1");
 
-      if (!amount || amount < 1) {
-        toast.error("Amount must be at least ₹1");
-        return;
-      }
+      const calculatedAmount = Math.round(amount * 100); // ₹ to paise
 
-      const calculatedAmount = Math.round(amount * 100); // Convert ₹ to paise
-
-      // Create Razorpay Order
-      const response = await axios.post(
+      const res = await axios.post(
         "https://mustaab.onrender.com/api/payment/create-order",
         {
           userId: userData._id,
-          orderItems: products.map((item) => ({
-            product: item._id,
-            quantity: item.quantity || item.product?.quantity || 1,
-            price: item.price,
+          orderItems: products.map((it) => ({
+            product: it._id,
+            quantity: it.quantity,
+            price: it.price,
           })),
           shippingAddress: selectedAddress._id,
-          amount: calculatedAmount, // Already in paise
-          paymentDetails: {
-            paymentMethod: "UPI",
-          },
+          amount: calculatedAmount,
+          paymentDetails: { paymentMethod: "UPI" },
           orderStatus: "pending",
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const razorpayOrderId = response?.data?.razorpayOrder?.id;
-
-      if (!razorpayOrderId) {
-        toast.error("Failed to get Razorpay Order ID");
-        return;
-      }
-
-      if (typeof window.Razorpay === "undefined") {
-        toast.error("Razorpay SDK not loaded properly");
-        return;
-      }
+      const razorpayOrderId = res?.data?.razorpayOrder?.id;
+      if (!razorpayOrderId) return toast.error("Failed to get Razorpay Order ID");
 
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: calculatedAmount,
         currency: "INR",
         name: "Mustaab Store",
-        description: "Complete your UPI payment",
-        image: "https://yourdomain.com/logo.png", // ✅ Avoid localhost or http
+        description: "Complete your payment",
         order_id: razorpayOrderId,
-        handler: async function (response) {
+        handler: async (response) => {
           try {
-            const verification = await axios.post(
+            const verify = await axios.post(
               "https://mustaab.onrender.com/api/payment/verify-payment",
               {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
               },
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  "Content-Type": "application/json",
-                },
-              }
+              { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            if (verification?.data?.success) {
-              toast.success("Order Placed Successfully!");
-              onSuccess?.();
+            if (verify.data.success) {
+              toast.success("Payment Successful!");
               setVerified(true);
             } else {
-              toast.error("Order placement failed");
+              toast.error("Payment verification failed");
             }
-          } catch (error) {
-            console.error("Verification error:", error);
-            toast.error(error);
+          } catch (err) {
+            console.error(err);
+            toast.error("Payment verification error");
           }
         },
         prefill: {
-          name: userData?.fullName,
-          email: userData?.email,
-          contact: userData?.phoneNumber,
+          name: userData.fullName,
+          email: userData.email,
+          contact: userData.phoneNumber,
         },
-        theme: {
-          color: "#F37254",
-        },
-        method: {
-          upi: true,
-        },
+        theme: { color: "#F37254" },
       };
 
       const rzp = new window.Razorpay(options);
       rzp.open();
-    } catch (error) {
-      console.error("Razorpay Payment Init Error:", error);
-      toast.error("Failed to initiate Razorpay Payment");
+    } catch (err) {
+      console.error(err);
+      toast.error("Payment initiation failed");
     }
   };
 
   return (
     <div>
-    <button
-      onClick={handlePayment}
-      className="bg-black text-white rounded-md py-2 px-4 w-full mt-2 hover:bg-gray-800 transition duration-200"
-    >
-      Pay with UPI
-    </button>
-    verified&&<OrderSuccess/>
+      <button
+        onClick={handlePayment}
+        className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition"
+      >
+        Pay Online
+      </button>
+      {verified && <OrderSuccess />}
     </div>
   );
 };

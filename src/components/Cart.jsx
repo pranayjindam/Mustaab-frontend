@@ -1,225 +1,137 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // ⬅️ Import navigate
-import Footer from "./Footer.jsx";
+import { Link, Navigate,useNavigate } from "react-router-dom";
+import axios from "axios";
+import Footer from "./Footer";
 
 export default function Cart() {
+   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState([]);
   const [cartAmount, setCartAmount] = useState(0);
-
-  const token = localStorage.getItem("jwt");
-  const navigate = useNavigate(); // ⬅️ Initialize
+  const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    if (token) fetchCart();
-  }, [token]);
+    const token = localStorage.getItem("token");
 
-  const fetchCart = async () => {
-    try {
-      const res = await fetch("https://mustaab.onrender.com/api/cart/cart", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    if (!token) {
+      setIsLoggedIn(false);
+      setLoading(false);
+      return;
+    }
 
-      const data = await res.json();
-      console.log("Cart API response:", data);
+    setIsLoggedIn(true);
 
-      if (data.success && data.cart) {
+    const fetchCartItems = async () => {
+      try {
+        const { data } = await axios.get(
+          "https://mustaab.onrender.com/api/cart/cart",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         setCartItems(data.cart.items || []);
         setCartAmount(data.cart.amount || 0);
-      } else {
-        console.warn("Cart fetch failed:", data.message);
+      } catch (error) {
+        console.error("Error fetching cart items:", error);
+        setCartItems([]);
+        setCartAmount(0);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Error fetching cart:", err);
-    }
-  };
+    };
 
-  const updateQty = async (productId, qty, size, color) => {
+    fetchCartItems();
+  }, []);
+
+  const handleRemoveFromCart = async (itemId) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setIsLoggedIn(false);
+      return;
+    }
+
     try {
-      const res = await fetch("https://mustaab.onrender.com/api/cart/updateqty", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ productId, qty, size, color }),
-      });
-
-      const data = await res.json();
-      console.log("Update qty response:", data);
-
-      if (data.success) {
-        setCartItems(data.cart.items || []);
-        setCartAmount(data.cart.amount || 0);
-      } else {
-        alert("Failed to update quantity");
-      }
-    } catch (err) {
-      console.error("Error updating quantity", err);
-    }
-  };
-
-const removeItem = async (productId, size, color) => {
-  if (!productId) {
-    alert("Missing product ID for removal");
-    return;
-  }
-
-  const queryParams = new URLSearchParams();
-  queryParams.append("productId", productId);
-
-  // Only add size and color if they exist and are not empty
-  if (size) queryParams.append("size", size);
-  if (color) queryParams.append("color", color);
-
-  try {
-    const res = await fetch(`https://mustaab.onrender.com/api/cart/remove?${queryParams}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await res.json();
-    console.log("Remove item response:", data);
-
-    if (data.success) {
-      setCartItems(data.cart.items || []);
-      setCartAmount(data.cart.amount || 0);
-    } else {
-      alert(data.message || "Failed to remove item");
-    }
-  } catch (err) {
-    console.error("Error removing item", err);
-    alert("Error removing item");
-  }
-};
-
-
-  const clearCart = async () => {
-    try {
-      await Promise.all(
-        cartItems.map((item) => {
-          const productId = typeof item.productId === "object" ? item.productId._id : item.productId;
-          const size = item.size || item.productId?.size || "";
-          const color = item.color || item.productId?.color || "";
-          return removeItem(productId, size, color);
-        })
+      await axios.delete(
+        `http//:localhost:2000/api/cart/remove/${itemId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-    } catch (err) {
-      console.error("Failed to clear cart", err);
+
+      setCartItems((prev) => prev.filter((item) => item._id !== itemId));
+    } catch (error) {
+      console.error("Error removing item:", error);
     }
   };
 
-  const handleCheckout = () => {
-    navigate("/checkout", { state: { products: cartItems, amount: cartAmount } });
-  };
+  if (loading) {
+    return <p className="p-4 text-center text-lg font-semibold">Loading cart...</p>;
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 min-h-screen">
+        <p className="text-lg font-semibold mb-6">Please login to access your cart.</p>
+        <Link to="/signin">
+          <button className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            Login
+          </button>
+        </Link>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-7xl w-full px-6 py-8 mx-auto">
-      <h2 className="text-3xl font-semibold mb-8">Shopping Cart</h2>
-
-      {cartItems.length === 0 ? (
-        <p className="text-lg text-gray-600">Your cart is empty.</p>
-      ) : (
-        <div className="space-y-8">
-          {cartItems.map((item) => {
-            const productId = typeof item.productId === "object" ? item.productId._id : item.productId;
-            const size = item.size || item.productId?.size || "";
-            const color = item.color || item.productId?.color || "";
-
-            return (
-              <div key={item._id} className="flex items-center border-b pb-6 mb-6">
-                <div className="w-1/4">
-                  <img
-                    src={item?.image || ""}
-                    alt={item?.name || "item"}
-                    className="w-full h-auto object-cover rounded-lg shadow-lg"
-                  />
-                </div>
-                <div className="w-3/4 pl-6">
-                  <h3 className="text-2xl font-semibold">{item?.name}</h3>
-                  <p className="text-lg text-gray-600 mt-1"><b>Color:</b> {color}</p>
-                  <p className="text-lg text-gray-600"><b>Size:</b> {size}</p>
-
-                  <div
-                    className="quantity-controls mt-4"
-                    style={{
-                      width: "110px",
-                      height: "35px",
-                      background: "white",
-                      border: "solid 3px orange",
-                      borderRadius: "20px",
-                      fontSize: "30px",
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    <button
-                      onClick={() =>
-                        item.qty > 1
-                          ? updateQty(productId, item.qty - 1, size, color)
-                          : removeItem(productId, size, color)
-                      }
-                      className="relative right-6"
-                      style={{ fontWeight: "bolder", cursor: "pointer" }}
-                    >
-                      -
-                    </button>
-                    <span style={{ fontSize: "20px", fontWeight: "bold" }}>{item.qty}</span>
-                    <button
-                      onClick={() =>
-                        updateQty(productId, item.qty + 1, size, color)
-                      }
-                      className="relative left-6"
-                      style={{ fontWeight: "bolder", cursor: "pointer" }}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-end">
-                  <p className="text-lg font-bold">₹{item.price}</p>
+    <>
+      <div className="max-w-6xl mx-auto px-4 py-8 flex gap-6 min-h-screen">
+        
+        {/* Left: Cart Items */}
+        <div className="flex-1 bg-white p-6 shadow rounded">
+          <h2 className="text-2xl font-bold border-b pb-4 mb-4">Shopping Cart</h2>
+          {cartItems.length === 0 ? (
+            <p className="text-center text-gray-600">Your cart is empty.</p>
+          ) : (
+            cartItems.map((item) => (
+              <div
+                key={item._id}
+                className="flex items-start gap-4 py-4 border-b"
+              >
+                <img
+                  src={item.image || item.productId.images?.[0]}
+                  alt={item.name || item.productId.title}
+                  className="w-24 h-24 object-contain border rounded"
+                />
+                <div className="flex-1">
+                  <p className="font-semibold text-lg">{item.name || item.productId.title}</p>
+                  <p className="text-gray-600 text-sm">{item.productId.brand}</p>
+                  {item.size && <p className="text-sm">Size: {item.size}</p>}
+                  {item.color && <p className="text-sm">Color: {item.color}</p>}
+                  <p className="text-sm">Qty: {item.qty}</p>
+                  <p className="text-lg font-bold mt-1">₹{(item.price * item.qty).toFixed(2)}</p>
                   <button
-                    onClick={() => removeItem(productId, size, color)}
-                    className="text-red-500 mt-2 hover:underline"
+                    onClick={() => handleRemoveFromCart(item._id)}
+                    className="text-red-500 hover:underline mt-2 text-sm"
                   >
                     Remove
                   </button>
                 </div>
               </div>
-            );
-          })}
-
-          <div className="flex justify-between items-center pt-6 border-t">
-            <div className="text-xl font-semibold">
-              Total: <span className="text-green-600">₹{cartAmount.toFixed(2)}</span>
-            </div>
-            <div className="flex gap-4">
-              <button
-                onClick={clearCart}
-                className="px-6 py-3 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600"
-              >
-                Clear Cart
-              </button>
-              <button
-                onClick={handleCheckout}
-                className="px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600"
-              >
-                Proceed to Checkout
-              </button>
-            </div>
-          </div>
+            ))
+          )}
         </div>
-      )}
 
-      <div className="w-screen px-0 py-8">
-        <Footer />
+        {/* Right: Order Summary */}
+        {cartItems.length > 0 && (
+          <div className="w-80 bg-white p-6 shadow rounded h-fit">
+            <p className="text-lg font-semibold mb-4">
+              Subtotal ({cartItems.length} items):{" "}
+              <span className="text-xl font-bold">₹{cartAmount.toFixed(2)}</span>
+            </p>
+            <button  type="button" className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 rounded" onClick={() => navigate("/checkout")}>
+              Proceed to Buy
+            </button>
+          </div>
+        )}
       </div>
-    </div>
+
+      <Footer />
+    </>
   );
 }

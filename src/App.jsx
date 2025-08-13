@@ -1,6 +1,6 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-
+import ProfilePage from "./components/Profile.jsx";
 // Pages
 import Login from "./Pages/Login.jsx";
 import Register from "./Pages/Register.jsx";
@@ -26,8 +26,8 @@ const getUser = () => {
 
 const ProtectedRoute = ({ children, allowedRole }) => {
   const user = getUser();
-  if (!user) return <Navigate to="/login" />;
-  if (allowedRole && user.role !== allowedRole) return <Navigate to="/login" />;
+  if (!user) return <Navigate to="/signin" />;
+  if (allowedRole && user.role !== allowedRole) return <Navigate to="/" />;
   return children;
 };
 
@@ -42,14 +42,28 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+
+      {/* Auth pages */}
       <Route path="/signin" element={<RedirectIfLoggedIn><Login /></RedirectIfLoggedIn>} />
       <Route path="/register" element={<RedirectIfLoggedIn><Register /></RedirectIfLoggedIn>} />
-      <Route path="/cart" element={<RedirectIfLoggedIn><Cart/></RedirectIfLoggedIn>}/>
+
+      {/* Cart & Checkout - Only for logged-in users */}
+      <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
+      <Route path="/checkout" element={<ProtectedRoute><CheckOut /></ProtectedRoute>} />
+      <Route path="/checkout/:productId" element={<ProtectedRoute><CheckOut /></ProtectedRoute>} />
+
+      {/* Products */}
       <Route path="/product/:id" element={<ProductDetails />} />
+
+      {/* Orders */}
+      <Route path="/order-success/:orderId" element={<OrderSuccess />} />
+      <Route path="/order-success" element={<OrderSuccess />} />
+
+      {/* Profile */}
+      <Route path="/profile" element={<ProtectedRoute><ProfilePage/></ProtectedRoute>} />
+
+      {/* Fallback */}
       <Route path="*" element={<Navigate to="/" />} />
-      <Route path="/checkout" element={<RedirectIfLoggedIn><CheckOut/></RedirectIfLoggedIn>}/>
-     <Route path="/order-success/:orderId" element={<OrderSuccess />} />
-<Route path="/order-success" element={<OrderSuccess />} />
     </Routes>
   );
 }

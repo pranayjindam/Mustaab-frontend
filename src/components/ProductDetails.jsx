@@ -195,11 +195,29 @@ const handleAddToCart = async () => {
             >
               Add to Cart
             </button>
-            <Link to={`/checkout/${product._id}`} state={{ product }}>
-              <button className="w-full sm:w-auto px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600">
-                Buy Now
-              </button>
-            </Link>
+           <Link
+  to={`/checkout/${product._id}`}
+  state={{
+    products: [
+      {
+        _id: product._id,
+        name: product.title || product.name,
+        price: product.price,
+        discount: product.discount || product.discountPercentage,
+        qty: 1,
+        color: selectedColor,
+        size: selectedSize,
+        image: selectedImage,
+      },
+    ],
+    amount: product.price - (product.price * (product.discountPercentage || product.discount || 0)) / 100,
+  }}
+>
+  <button className="w-full sm:w-auto px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600">
+    Buy Now
+  </button>
+</Link>
+
           </div>
         </div>
       </div>
