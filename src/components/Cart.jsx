@@ -1,137 +1,127 @@
-import React, { useState, useEffect } from "react";
-import { Link, Navigate,useNavigate } from "react-router-dom";
-import axios from "axios";
-import Footer from "./Footer";
+import React from "react";
+import {
+  useGetCartQuery,
+  useRemoveFromCartMutation,
+  useUpdateCartItemMutation,
+} from "../redux/api/cartApi";
+import { toast } from "react-toastify";
+import Loader  from "../components/Loader.jsx";
 
 export default function Cart() {
-   const navigate = useNavigate();
-  const [cartItems, setCartItems] = useState([]);
-  const [cartAmount, setCartAmount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { data, isLoading, isError, error } = useGetCartQuery();
+  const [removeFromCart] = useRemoveFromCartMutation();
+  const [updateCartItem] = useUpdateCartItemMutation();
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
+  if (isLoading) return <Loader/>;
+  if (isError)
+    return (
+      <div className="text-center py-8 text-red-500">
+        Failed to load cart. {error?.data?.message || ""}
+      </div>
+    );
 
-    if (!token) {
-      setIsLoggedIn(false);
-      setLoading(false);
-      return;
-    }
+  // The API returns cart inside data.cart
+  const cart = data?.cart;
+  if (!cart?.items?.length)
+    return (
+      <div className="text-center py-8">
+        <p>Your cart is empty.</p>
+        <a href="/shop" className="text-blue-600 hover:underline">
+          Go Shopping
+        </a>
+      </div>
+    );
 
-    setIsLoggedIn(true);
-
-    const fetchCartItems = async () => {
-      try {
-        const { data } = await axios.get(
-          "https://mustaab.onrender.com/api/cart/cart",
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setCartItems(data.cart.items || []);
-        setCartAmount(data.cart.amount || 0);
-      } catch (error) {
-        console.error("Error fetching cart items:", error);
-        setCartItems([]);
-        setCartAmount(0);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCartItems();
-  }, []);
-
-  const handleRemoveFromCart = async (itemId) => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setIsLoggedIn(false);
-      return;
-    }
-
+  const handleRemove = async (id) => {
     try {
-      await axios.delete(
-        `http//:localhost:2000/api/cart/remove/${itemId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      setCartItems((prev) => prev.filter((item) => item._id !== itemId));
-    } catch (error) {
-      console.error("Error removing item:", error);
+      await removeFromCart(id).unwrap();
+      toast.success("Item removed from cart");
+    } catch (err) {
+      toast.error("Failed to remove item");
     }
   };
 
-  if (loading) {
-    return <p className="p-4 text-center text-lg font-semibold">Loading cart...</p>;
-  }
+  const handleQtyChange = async (id, qty) => {
+    if (qty < 1) return;
+    try {
+      await updateCartItem({ itemId: id, qty }).unwrap();
+      toast.success("Cart updated");
+    } catch (err) {
+      toast.error("Failed to update cart");
+    }
+  };
 
-  if (!isLoggedIn) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 min-h-screen">
-        <p className="text-lg font-semibold mb-6">Please login to access your cart.</p>
-        <Link to="/signin">
-          <button className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-            Login
-          </button>
-        </Link>
-        <Footer />
-      </div>
-    );
-  }
+  const totalAmount = cart.items.reduce(
+    (acc, item) => acc + item.price * item.qty,
+    0
+  );
 
   return (
-    <>
-      <div className="max-w-6xl mx-auto px-4 py-8 flex gap-6 min-h-screen">
-        
-        {/* Left: Cart Items */}
-        <div className="flex-1 bg-white p-6 shadow rounded">
-          <h2 className="text-2xl font-bold border-b pb-4 mb-4">Shopping Cart</h2>
-          {cartItems.length === 0 ? (
-            <p className="text-center text-gray-600">Your cart is empty.</p>
-          ) : (
-            cartItems.map((item) => (
-              <div
-                key={item._id}
-                className="flex items-start gap-4 py-4 border-b"
-              >
-                <img
-                  src={item.image || item.productId.images?.[0]}
-                  alt={item.name || item.productId.title}
-                  className="w-24 h-24 object-contain border rounded"
-                />
-                <div className="flex-1">
-                  <p className="font-semibold text-lg">{item.name || item.productId.title}</p>
-                  <p className="text-gray-600 text-sm">{item.productId.brand}</p>
-                  {item.size && <p className="text-sm">Size: {item.size}</p>}
-                  {item.color && <p className="text-sm">Color: {item.color}</p>}
-                  <p className="text-sm">Qty: {item.qty}</p>
-                  <p className="text-lg font-bold mt-1">₹{(item.price * item.qty).toFixed(2)}</p>
+    <div className="max-w-5xl mx-auto py-10 px-4">
+      <h2 className="text-2xl font-bold mb-6">My Cart</h2>
+
+      <div className="space-y-6">
+        {cart.items.map((item) => (
+          <div
+            key={item._id}
+            className="flex justify-between items-center border-b pb-4"
+          >
+            {/* Product info */}
+            <div className="flex items-center space-x-4">
+              <img
+                src={item.image}
+                alt={item.name}
+                className="w-24 h-24 object-cover rounded"
+              />
+              <div>
+                <p className="font-medium">{item.name}</p>
+                <p className="text-gray-500">₹{item.price.toFixed(2)}</p>
+                <div className="flex items-center mt-2 space-x-2">
                   <button
-                    onClick={() => handleRemoveFromCart(item._id)}
-                    className="text-red-500 hover:underline mt-2 text-sm"
+                    className="px-2 py-1 border rounded hover:bg-gray-200"
+                    onClick={() => handleQtyChange(item._id, item.qty - 1)}
                   >
-                    Remove
+                    -
+                  </button>
+                  <span className="w-10 text-center">{item.qty}</span>
+                  <button
+                    className="px-2 py-1 border rounded hover:bg-gray-200"
+                    onClick={() => handleQtyChange(item._id, item.qty + 1)}
+                  >
+                    +
                   </button>
                 </div>
               </div>
-            ))
-          )}
-        </div>
+            </div>
 
-        {/* Right: Order Summary */}
-        {cartItems.length > 0 && (
-          <div className="w-80 bg-white p-6 shadow rounded h-fit">
-            <p className="text-lg font-semibold mb-4">
-              Subtotal ({cartItems.length} items):{" "}
-              <span className="text-xl font-bold">₹{cartAmount.toFixed(2)}</span>
-            </p>
-            <button  type="button" className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 rounded" onClick={() => navigate("/checkout")}>
-              Proceed to Buy
-            </button>
+            {/* Price & remove */}
+            <div className="flex flex-col items-end space-y-2">
+              <p className="font-medium">
+                ₹{(item.price * item.qty).toFixed(2)}
+              </p>
+              <button
+                onClick={() => handleRemove(item._id)}
+                className="text-red-600 hover:underline"
+              >
+                Remove
+              </button>
+            </div>
           </div>
-        )}
+        ))}
       </div>
 
-      <Footer />
-    </>
+      {/* Total amount */}
+      <div className="mt-8 flex justify-end space-x-4 items-center">
+        <p className="text-lg font-semibold">
+          Total: ₹{totalAmount.toFixed(2)}
+        </p>
+        <a
+          href="/checkout"
+          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+        >
+          Proceed to Checkout
+        </a>
+      </div>
+    </div>
   );
 }

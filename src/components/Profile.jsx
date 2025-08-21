@@ -1,86 +1,56 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-
+"use client";
+import React, { useState, useEffect } from "react";
+import { useGetProfileQuery, useUpdateUserMutation } from "../redux/api/authApi.js";
+import { useDispatch, useSelector } from "react-redux";
+import { setCredentials } from "../redux/slices/authSlice.js";
+import Loader from "./Loader.jsx";
 export default function ProfilePage() {
-  const [user, setUser] = useState(null);
-  const [editField, setEditField] = useState(null); // which field is being edited
+  const dispatch = useDispatch();
+  const auth = useSelector((state) => state.auth);
+
+  const { data: userData, isLoading, isError } = useGetProfileQuery();
+  const [updateUser, { isLoading: saving }] = useUpdateUserMutation();
+
+  const [editField, setEditField] = useState(null);
   const [tempValue, setTempValue] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Fetch profile
+  // Sync Redux auth.user with latest profile data
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setMessage("Please log in to view your profile.");
-          setLoading(false);
-          return;
-        }
-        const { data } = await axios.get(
-"https://mustaab.onrender.com/api/user/me",          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+    if (userData?.user && auth.user?._id !== userData.user._id) {
+      dispatch(setCredentials({ user: userData.user, token: auth.token }));
+    }
+  }, [userData, auth.token, auth.user, dispatch]);
 
-        if (data.success) {
-          setUser(data.user);
-        } else {
-          setMessage(data.message || "Failed to load profile.");
-        }
-      } catch (err) {
-        setMessage("Error fetching profile.");
-      } finally {
-        setLoading(false);
-      }
-    };
+  if (isLoading) return <Loader />;
+  if (isError || !userData?.user)
+    return <div className="text-center text-red-500">Failed to load profile.</div>;
 
-    fetchProfile();
-  }, []);
+  const user = userData.user;
 
-  // Handle save for a single field
+  const fields = [
+    { key: "email", label: "Email", type: "email" },
+    { key: "mobile", label: "Mobile", type: "text" },
+    { key: "password", label: "Password", type: "password" }
+  ];
+
   const saveField = async (field) => {
     if (!tempValue.trim()) return;
-
-    setSaving(true);
     try {
-      const token = localStorage.getItem("token");
-
-      const { data } = await axios.put(
-        "https://mustaab.onrender.com/api/user/update",
-        { [field]: tempValue },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (data.success) {
-        setUser((prev) => ({ ...prev, [field]: tempValue }));
+      const res = await updateUser({ field, value: tempValue }).unwrap();
+      if (res.success) {
         setMessage("✅ Updated successfully.");
         setEditField(null);
+
+        // Update Redux auth.user as well
+        dispatch(setCredentials({ user: { ...user, [field]: tempValue }, token: auth.token }));
       } else {
         setMessage("❌ Update failed.");
       }
     } catch (err) {
       setMessage("❌ Error updating field.");
-    } finally {
-      setSaving(false);
     }
   };
-
-  if (loading) return <div className="text-center py-8">Loading...</div>;
-
-  if (!user)
-    return <div className="text-center text-red-500">{message || "No user data"}</div>;
-
-  const fields = [
-    { key: "email", label: "Email", type: "email" },
-    { key: "mobile", label: "Mobile", type: "text" },
-    { key: "password", label: "Password", type: "password" },
-    { key: "role", label: "Role", type: "text" },
-  ];
 
   return (
     <div className="flex justify-center py-10 px-4">
@@ -136,12 +106,9 @@ export default function ProfilePage() {
             </div>
           ))}
 
-          {/* Joined date */}
           <div>
             <p className="text-gray-500 text-sm">Joined On</p>
-            <p className="font-medium">
-              {new Date(user.createdAt).toLocaleDateString()}
-            </p>
+            <p className="font-medium">{new Date(user.createdAt).toLocaleDateString()}</p>
           </div>
         </div>
       </div>

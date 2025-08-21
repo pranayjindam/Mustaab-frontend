@@ -1,3 +1,4 @@
+"use client";
 import React, { useRef, useEffect, useState } from "react";
 import AliceCarousel from "react-alice-carousel";
 import "react-alice-carousel/lib/alice-carousel.css";
@@ -12,24 +13,28 @@ const HomeCarousel = () => {
   const [carouselData, setCarouselData] = useState([]);
 
   useEffect(() => {
-    axios.get("https://mustaab.onrender.com/api/carousel/get")
-      .then(res => {
+    const fetchData = async () => {
+      try {
+        const res = await axios.get("https://mustaab.onrender.com/api/carousel/get");
         if (res.data.success) {
           setCarouselData(res.data.data);
         }
-      })
-      .catch(err => console.error(err));
+      } catch (err) {
+        console.error("Carousel fetch error:", err);
+      }
+    };
+    fetchData();
   }, []);
 
   const items = carouselData.map((item) => (
     <img
-      className="cursor-pointer"
-      onClick={() => navigate(item.path)}
-      src={item.image}
-      alt=""
-      onDragStart={handleDragStart}
-      role="presentation"
       key={item._id}
+      src={item.image}
+      alt={item.title || "carousel image"}
+      onDragStart={handleDragStart}
+      loading="lazy"
+      className="cursor-pointer w-full h-96 object-cover"
+      onClick={() => navigate(item.path || "/")}
     />
   ));
 
@@ -37,26 +42,28 @@ const HomeCarousel = () => {
   const handleNext = () => carouselRef.current?.slideNext();
 
   return (
-    <div className="relative">
+    <div className="relative w-full my-8">
       <AliceCarousel
         ref={carouselRef}
         mouseTracking
         items={items}
         autoPlay
         infinite
-        autoPlayInterval={2000}
+        autoPlayInterval={3000}
         disableDotsControls
         disableButtonsControls
       />
+
+      {/* Navigation Buttons */}
       <button
         onClick={handlePrev}
-        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg hover:bg-gray-700"
+        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg hover:bg-gray-700 z-10"
       >
         &lt;
       </button>
       <button
         onClick={handleNext}
-        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg hover:bg-gray-700"
+        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg hover:bg-gray-700 z-10"
       >
         &gt;
       </button>

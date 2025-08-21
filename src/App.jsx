@@ -7,8 +7,7 @@ import Register from "./Pages/Register.jsx";
 import HomePage from "./Pages/HomePage.jsx";
 import ProductDetails from "./components/ProductDetails.jsx";
 import Cart from "./components/Cart.jsx";
-import CheckOut from "./components/checkout/CheckOut.jsx";
-import OrderSuccess from "./components/checkout/OrderSuccess.jsx";
+import Checkout from "./components/checkout/checkout.jsx";
 import './App.css';
 
 // Utils
@@ -33,10 +32,12 @@ const ProtectedRoute = ({ children, allowedRole }) => {
 
 const RedirectIfLoggedIn = ({ children }) => {
   const user = getUser();
-  if (user?.role === "ADMIN") return <Navigate to="/admin" />;
-  if (user?.role === "CUSTOMER") return <Navigate to="/" />;
+  const token = localStorage.getItem("token");
+  
+  if (token && user?.role === "CUSTOMER") return <Navigate to="/" replace />;
   return children;
 };
+
 
 export default function App() {
   return (
@@ -49,15 +50,15 @@ export default function App() {
 
       {/* Cart & Checkout - Only for logged-in users */}
       <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
-      <Route path="/checkout" element={<ProtectedRoute><CheckOut /></ProtectedRoute>} />
-      <Route path="/checkout/:productId" element={<ProtectedRoute><CheckOut /></ProtectedRoute>} />
+      <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+      {/* <Route path="/checkout/:productId" element={<ProtectedRoute><CheckOut /></ProtectedRoute>} /> */}
 
       {/* Products */}
       <Route path="/product/:id" element={<ProductDetails />} />
 
       {/* Orders */}
-      <Route path="/order-success/:orderId" element={<OrderSuccess />} />
-      <Route path="/order-success" element={<OrderSuccess />} />
+      {/* <Route path="/order-success/:orderId" element={<OrderSuccess />} /> */}
+      {/* <Route path="/order-success" element={<OrderSuccess />} /> */}
 
       {/* Profile */}
       <Route path="/profile" element={<ProtectedRoute><ProfilePage/></ProtectedRoute>} />

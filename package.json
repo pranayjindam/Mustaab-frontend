@@ -37,6 +37,7 @@
     "react-toastify": "^11.0.3",
     "react-tsparticles": "^2.12.2",
     "redux": "^5.0.1",
+    "redux-persist": "^6.0.0",
     "slick-carousel": "^1.8.1",
     "tsparticles": "^3.8.1"
   },

@@ -1,153 +1,106 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+"use client";
+import React, { useState } from "react";
+import { useLoginUserMutation } from "../redux/api/authApi.js";
 import { useDispatch } from "react-redux";
-import { loginSuccess } from "../redux/authSlice.js"; // ✅ Correct path
+import { setCredentials } from "../redux/slices/authSlice.js";
+import { useNavigate } from "react-router-dom";
 
-
-const Login = () => {
+export default function Login() {
+  const [formData, setFormData] = useState({ identifier: "", password: "" });
+  const [loginUser, { isLoading }] = useLoginUserMutation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const [passwordVisible, setPasswordVisible] = useState(false);
-  const [formData, setFormData] = useState({ identifier: "", password: "" });
-  const [statusMessage, setStatusMessage] = useState("");
-  const [messageType, setMessageType] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Auto-redirect if already logged in
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (user) {
-      navigate(user.role === "ADMIN" ? "/admin" : "/");
-    }
-  }, []);
-
-  const togglePasswordVisibility = () => {
-    setPasswordVisible(!passwordVisible);
-  };
-
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    setStatusMessage("");
+
+    const trimmedData = {
+      identifier: formData.identifier.trim(),
+      password: formData.password.trim(),
+    };
 
     try {
-      const response = await fetch("https://mustaab.onrender.com/api/auth/signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const res = await loginUser(trimmedData).unwrap();
 
-      const data = await response.json();
-      setIsLoading(false);
-
-      if (data.success && data.token && data.user) {
-        dispatch(loginSuccess({ user: data.user, token: data.token }));
-
-        localStorage.setItem("jwt", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-
-        setStatusMessage("Login Successful!");
-        setMessageType("success");
-
-        // Role-based redirection
-        setTimeout(() => {
-          if (data.user.role === "ADMIN") {
-            navigate("/admin");
-          } else {
-            navigate("/");
-          }
-        }, 1000);
+      // Backend may return success: true/false with 200
+      if (res.success) {
+        dispatch(setCredentials({ user: res.user, token: res.token }));
+        alert("Login successful!");
+        navigate("/");
       } else {
-        setStatusMessage(data.message || "Login failed.");
-        setMessageType("error");
+        // Backend returned 200 but success: false
+        alert(res.message || "Login failed");
       }
-    } catch (error) {
-      setStatusMessage("Something went wrong. Please try again.");
-      setMessageType("error");
-      setIsLoading(false);
+    } catch (err) {
+      // RTK Query sends non-2xx status here
+      console.error("Login failed:", err);
+
+      const errorMessage =
+        err?.data?.message || // backend message
+        err?.error ||          // fallback
+        "Login failed";
+      alert(errorMessage);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white flex justify-center items-center">
-      <div className="bg-white p-8 shadow-lg rounded-lg w-96 border border-gray-200">
-        <h2 className="text-2xl font-bold text-center mb-6">Sign in to your account</h2>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md">
+        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
+          Login to Your Account
+        </h2>
 
-        {statusMessage && (
-          <div
-            className={`p-3 mb-4 text-white text-center rounded-md ${
-              messageType === "success" ? "bg-green-500" : "bg-red-500"
-            }`}
-          >
-            {statusMessage}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email/Mobile
+            </label>
             <input
-              type="email"
+              type="identifier"
               name="identifier"
+              placeholder="Enter your identifier"
               value={formData.identifier}
               onChange={handleChange}
-              className="w-full p-2 border border-gray-300 rounded-md mt-1 focus:ring focus:ring-blue-200"
-              placeholder="Enter your email"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
               required
             />
           </div>
 
-          <div className="mt-4 relative">
-            <label className="block text-sm font-medium text-gray-700">Password</label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
             <input
-              type={passwordVisible ? "text" : "password"}
+              type="password"
               name="password"
+              placeholder="Enter your password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full p-2 border border-gray-300 rounded-md mt-1 focus:ring focus:ring-blue-200"
-              placeholder="Enter your password"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
               required
             />
-            <button
-              type="button"
-              onClick={togglePasswordVisibility}
-              className="absolute right-3 top-9 text-gray-500"
-            >
-              {passwordVisible ? <FaEyeSlash /> : <FaEye />}
-            </button>
-          </div>
-
-          <div className="mt-2 text-right">
-            <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
-              Forgot password?
-            </Link>
           </div>
 
           <button
             type="submit"
-            className="w-full mt-4 bg-yellow-500 text-white py-2 rounded-md font-semibold hover:bg-yellow-600"
             disabled={isLoading}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
           >
-            {isLoading ? "Signing In..." : "Sign In"}
+            {isLoading ? "Logging in..." : "Login"}
           </button>
         </form>
 
-        <div className="mt-4 text-center text-sm">
-          No account?
-          <Link to="/register" className="text-blue-600 font-semibold hover:underline ml-1">
-            Register here
-          </Link>
-        </div>
+        <p className="text-sm text-center text-gray-600 mt-6">
+          Don’t have an account?{" "}
+          <a href="/register" className="text-blue-600 hover:underline">
+            Register
+          </a>
+        </p>
       </div>
     </div>
   );
-};
-
-export default Login;
+}
