@@ -7,7 +7,7 @@ import Register from "./Pages/Register.jsx";
 import HomePage from "./Pages/HomePage.jsx";
 import ProductDetails from "./components/ProductDetails.jsx";
 import Cart from "./components/Cart.jsx";
-import Checkout from "./components/checkout/checkout.jsx";
+import Checkout from "./components/checkout/Checkout.jsx";
 import './App.css';
 
 // Utils
