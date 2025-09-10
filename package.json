@@ -53,7 +53,6 @@
     "react-tsparticles": "^2.12.2",
     "redux": "^5.0.1",
     "redux-persist": "^6.0.0",
-    "redux-thunk": "^2.4.2",
     "slick-carousel": "^1.8.1",
     "tsparticles": "^3.8.1",
     "web-vitals": "^2.1.4"
