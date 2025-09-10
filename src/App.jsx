@@ -1,69 +1,155 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import ProfilePage from "./components/Profile.jsx";
-// Pages
-import Login from "./Pages/Login.jsx";
-import Register from "./Pages/Register.jsx";
-import HomePage from "./Pages/HomePage.jsx";
-import ProductDetails from "./components/ProductDetails.jsx";
-import Cart from "./components/Cart.jsx";
-import Checkout from "./components/checkout/Checkout.jsx";
-import './App.css';
+import { useSelector } from "react-redux";
 
-// Utils
-const getUser = () => {
-  try {
-    const raw = localStorage.getItem("user");
-    if (!raw || raw === "undefined" || raw === "null") return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed?.role) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-};
+// ===== Client Pages =====
+import HomePage from "./client/pages/HomePage.jsx";
+import Login from "./pages/LoginPage.jsx";
+import Register from "./Pages/SignupPage.jsx";
+import ProductDetails from "./client/pages/ProductDetailsPage.jsx";
+import Cart from "./client/pages/CartPage.jsx";
+import Checkout from "./client/pages/checkout/Checkout.jsx";
+import ProfilePage from "./pages/ProfilePage.jsx";
 
-const ProtectedRoute = ({ children, allowedRole }) => {
-  const user = getUser();
+// ===== Admin Pages =====
+import DashboardLayout from "./admin/pages/Dashboard.jsx";
+import CategoriesPage from "./admin/pages/CategoriesPage.jsx";
+import ProductsPage from "./admin/pages/ProductsPage.jsx";
+import CarouselPage from "./admin/pages/CarouselPage.jsx";
+import AddressPage from "./admin/pages/AddressPage.jsx";
+import ReviewPage from "./admin/pages/ReviewsPage.jsx";
+
+// ===== Protected Route (Redux) =====
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const user = useSelector((state) => state.auth.user);
+
   if (!user) return <Navigate to="/signin" />;
-  if (allowedRole && user.role !== allowedRole) return <Navigate to="/" />;
+
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/" />;
+  }
   return children;
 };
 
+// ===== Redirect If Logged In =====
 const RedirectIfLoggedIn = ({ children }) => {
-  const user = getUser();
-  const token = localStorage.getItem("token");
-  
-  if (token && user?.role === "CUSTOMER") return <Navigate to="/" replace />;
+  const user = useSelector((state) => state.auth.user);
+
+  if (user?.role === "USER") return <Navigate to="/" replace />;
+  if (user?.role === "ADMIN") return <Navigate to="/admin/products" replace />;
+
   return children;
 };
-
 
 export default function App() {
   return (
     <Routes>
+      {/* ===== Public client routes ===== */}
       <Route path="/" element={<HomePage />} />
-
-      {/* Auth pages */}
-      <Route path="/signin" element={<RedirectIfLoggedIn><Login /></RedirectIfLoggedIn>} />
-      <Route path="/register" element={<RedirectIfLoggedIn><Register /></RedirectIfLoggedIn>} />
-
-      {/* Cart & Checkout - Only for logged-in users */}
-      <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
-      <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-      {/* <Route path="/checkout/:productId" element={<ProtectedRoute><CheckOut /></ProtectedRoute>} /> */}
-
-      {/* Products */}
+      <Route
+        path="/signin"
+        element={
+          <RedirectIfLoggedIn>
+            <Login />
+          </RedirectIfLoggedIn>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <RedirectIfLoggedIn>
+            <Register />
+          </RedirectIfLoggedIn>
+        }
+      />
       <Route path="/product/:id" element={<ProductDetails />} />
+      {/* ===== Customer protected routes ===== */}
+      <Route
+        path="/cart"
+        element={
+          <ProtectedRoute allowedRoles={["USER","ADMIN"]}>
+            <Cart/>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/checkout"
+        element={
+          <ProtectedRoute allowedRoles={["USER","ADMIN"]}>
+            <Checkout/>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute allowedRoles={["USER", "ADMIN"]}>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
 
-      {/* Orders */}
-      {/* <Route path="/order-success/:orderId" element={<OrderSuccess />} /> */}
-      {/* <Route path="/order-success" element={<OrderSuccess />} /> */}
+      {/* ===== Admin routes with DashboardLayout ===== */}
+      <Route
+        path="/admin/products"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <DashboardLayout>
+              <ProductsPage />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <DashboardLayout/>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/categories"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <DashboardLayout>
+              <CategoriesPage />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/carousel"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <DashboardLayout>
+              <CarouselPage />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/address"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <DashboardLayout>
+              <AddressPage />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/reviews"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <DashboardLayout>
+              <ReviewPage />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
 
-      {/* Profile */}
-      <Route path="/profile" element={<ProtectedRoute><ProfilePage/></ProtectedRoute>} />
-
-      {/* Fallback */}
+      {/* ===== Fallback ===== */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

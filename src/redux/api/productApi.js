@@ -1,20 +1,46 @@
-// src/redux/api/productApi.js
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+// redux/api/productApi.js
+import { apiSlice } from "./apiSlice"; // base apiSlice
 
-export const productApi = createApi({
-  reducerPath: "productApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "https://mustaab.onrender.com/api" }),
-  tagTypes: ["Product"],
+export const productApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    fetchAllProducts: builder.query({
+    getAllProducts: builder.query({
       query: () => "/product",
-      providesTags: ["Product"],
+      providesTags: ["Product"]
     }),
-    fetchProductById: builder.query({
+    getProductById: builder.query({
       query: (id) => `/product/${id}`,
-      providesTags: ["Product"],
+      providesTags: ["Product"]
+    }),
+    getProductsByCategory: builder.query({
+      query: (category) => `/product/category/${category}`,
+      providesTags: (result, error, category) => [{ type: "Product", id: category }]
+    }),
+    searchProducts: builder.query({
+      query: (keyword) => `/product/search/${keyword}`,
+      providesTags: ["Product"]
+    }),
+    createProduct: builder.mutation({
+      query: (data) => ({ url: "/product", method: "POST", body: data }),
+      invalidatesTags: ["Product"]
+    }),
+    updateProduct: builder.mutation({
+      query: ({ id, ...data }) => ({ url: `/product/${id}`, method: "PUT", body: data }),
+      invalidatesTags: ["Product"]
+    }),
+    deleteProduct: builder.mutation({
+      query: (id) => ({ url: `/product/${id}`, method: "DELETE" }),
+      invalidatesTags: ["Product"]
     }),
   }),
+  overrideExisting: false,
 });
 
-export const { useFetchAllProductsQuery, useFetchProductByIdQuery } = productApi;
+export const {
+  useGetAllProductsQuery,
+  useGetProductByIdQuery,
+  useGetProductsByCategoryQuery,
+  useSearchProductsQuery,
+  useCreateProductMutation,
+  useUpdateProductMutation,
+  useDeleteProductMutation
+} = productApi;

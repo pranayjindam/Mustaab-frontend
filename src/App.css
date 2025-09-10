@@ -23,3 +23,15 @@ svg[width="auto"], svg[height="auto"] {
 .animate-fadeInOut {
   animation: fadeInOut 1.2s ease-in-out infinite;
 }
+
+.slick-track {
+  display: flex !important;
+}
+
+.slick-slide {
+  height: auto !important;
+}
+
+.slick-list {
+  overflow: hidden !important;
+}

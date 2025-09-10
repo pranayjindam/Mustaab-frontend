@@ -1,31 +1,35 @@
-import { configureStore } from "@reduxjs/toolkit";
-import { apiSlice } from "../api/apiSlice.js";
-import { productApi } from "../api/productApi.js";
-import productReducer from "../slices/productSlice.js"; // ✅ import the slice
-import authReducer from "../slices/authSlice.js";
-
+import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import { persistStore, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 
-const authPersistConfig = {
-  key: "auth",
+import { apiSlice } from "../api/apiSlice";
+import addressSlice from "../slices/addressSlice";
+import cartSlice from "../slices/cartSlice";
+import productSlice from "../slices/productSlice";
+import authSlice from "../slices/authSlice";
+
+const rootReducer = combineReducers({
+  [apiSlice.reducerPath]: apiSlice.reducer, // ✅ only this API reducer
+  address: addressSlice,
+  cart: cartSlice,
+  product: productSlice,
+  auth: authSlice,
+});
+
+const persistConfig = {
+  key: "root",
   storage,
+  whitelist: ["auth", "cart", "address", "product"],
 };
 
-const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);
+const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 export const store = configureStore({
-  reducer: {
-    [apiSlice.reducerPath]: apiSlice.reducer,
-    [productApi.reducerPath]: productApi.reducer,
-    products: productReducer, // ✅ add slice here
-    auth: persistedAuthReducer,
-  },
+  reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({ serializableCheck: false }).concat(
-      apiSlice.middleware,
-      productApi.middleware
-    ),
+    getDefaultMiddleware({
+      serializableCheck: { ignoredActions: ["persist/PERSIST", "persist/REHYDRATE"] },
+    }).concat(apiSlice.middleware), // ✅ only once
 });
 
 export const persistor = persistStore(store);

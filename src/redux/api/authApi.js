@@ -1,36 +1,22 @@
+// src/redux/api/authApi.js
 import { apiSlice } from "./apiSlice";
 
 export const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    registerUser: builder.mutation({
-      query: (data) => ({ url: "/auth/signup", method: "POST", body: data }),
+    signin: builder.mutation({
+      query: (body) => ({ url: "/auth/signin", method: "POST", body }),
     }),
-    loginUser: builder.mutation({
-      query: (data) => ({
-        url: "/auth/signin",
-        method: "POST",
-        body: data,
-        headers: { "Content-Type": "application/json" },
-      }),
+    signup: builder.mutation({
+      query: (body) => ({ url: "/auth/signup", method: "POST", body }),
     }),
-    getProfile: builder.query({
-      query: () => "/user/me",
-      providesTags: ["User"],
-    }),
-    updateUser: builder.mutation({
-      query: ({ field, value }) => ({
-        url: "/user/update",
-        method: "PUT",
-        body: { [field]: value },
-      }),
-      invalidatesTags: ["User"],
+    registerAdmin: builder.mutation({
+      query: (body) => ({ url: "/auth/admin-register", method: "POST", body }),
     }),
   }),
 });
 
 export const {
-  useRegisterUserMutation,
-  useLoginUserMutation,
-  useGetProfileQuery,
-  useUpdateUserMutation,
+  useSigninMutation,
+  useSignupMutation,
+  useRegisterAdminMutation,
 } = authApi;
