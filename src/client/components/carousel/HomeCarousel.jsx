@@ -1,30 +1,20 @@
 "use client";
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef } from "react";
 import AliceCarousel from "react-alice-carousel";
 import "react-alice-carousel/lib/alice-carousel.css";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useGetCarouselImagesQuery } from "../../../redux/api/carouselApi";
 
 const handleDragStart = (e) => e.preventDefault();
 
 const HomeCarousel = () => {
   const navigate = useNavigate();
   const carouselRef = useRef(null);
-  const [carouselData, setCarouselData] = useState([]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await axios.get("https://mustaab.onrender.com/api/carousel/get");
-        if (res.data.success) setCarouselData(res.data.data);
-      } catch (err) {
-        console.error("Carousel fetch error:", err);
-      }
-    };
-    fetchData();
-  }, []);
+  // Using Redux RTK Query
+  const { data: carouselData = [], isLoading, isError } = useGetCarouselImagesQuery();
 
-  const items = carouselData.map((item) => (
+  const items = carouselData?.data?.map((item) => (
     <div key={item._id} className="relative w-full h-96 sm:h-[400px] md:h-[500px]">
       <img
         src={item.image}
@@ -45,8 +35,11 @@ const HomeCarousel = () => {
   const handlePrev = () => carouselRef.current?.slidePrev();
   const handleNext = () => carouselRef.current?.slideNext();
 
+  if (isLoading) return <div className="text-center py-20">Loading carousel...</div>;
+  if (isError) return <div className="text-center py-20 text-red-500">Failed to load carousel.</div>;
+
   return (
-    <div className="relative w-full  mx-auto my-8">
+    <div className="relative w-full mx-auto my-8">
       <AliceCarousel
         ref={carouselRef}
         mouseTracking
