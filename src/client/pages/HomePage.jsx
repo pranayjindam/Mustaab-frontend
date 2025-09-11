@@ -1,7 +1,7 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+import Footer from "../components/carousel/Footer";
 import HomeCarousel from "../components/carousel/HomeCarousel";
 import RecentSearches from "../components/RecentSearches";
 import Loader from "../../components/Loader";

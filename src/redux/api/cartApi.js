@@ -1,12 +1,13 @@
 import { apiSlice } from "./apiSlice";
 
-// Inject Cart endpoints into the shared apiSlice
 export const cartApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getCart: builder.query({
       query: () => "/cart",
       providesTags: ["Cart"],
+      refetchOnMountOrArgChange: true, // always refresh
     }),
+
     addToCart: builder.mutation({
       query: (data) => ({
         url: "/cart/add",
@@ -15,21 +16,27 @@ export const cartApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ["Cart"],
     }),
+
     updateCartItem: builder.mutation({
-      query: ({ id, ...data }) => ({
-        url: `/cart/${id}`,
+      query: ({ productId, qty }) => ({
+        url: "/cart/update",
         method: "PUT",
-        body: data,
+        body: { productId, qty },
       }),
       invalidatesTags: ["Cart"],
     }),
-    removeFromCart: builder.mutation({
-      query: (id) => ({
-        url: `/cart/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Cart"],
-    }),
+
+removeFromCart: builder.mutation({
+  query: (productId) => ({
+    url: `/cart/remove/${productId}`,
+    method: "DELETE",
+  }),
+  invalidatesTags: ["Cart"], // <-- This tells RTK Query to refetch cart
+}),
+
+
+
+
     clearCart: builder.mutation({
       query: () => ({
         url: "/cart/clear",
@@ -38,10 +45,8 @@ export const cartApi = apiSlice.injectEndpoints({
       invalidatesTags: ["Cart"],
     }),
   }),
-  overrideExisting: true,
 });
 
-// ✅ Export hooks
 export const {
   useGetCartQuery,
   useAddToCartMutation,

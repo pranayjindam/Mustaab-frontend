@@ -10,7 +10,7 @@ import ProductDetails from "./client/pages/ProductDetailsPage.jsx";
 import Cart from "./client/pages/CartPage.jsx";
 import Checkout from "./client/pages/checkout/Checkout.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
-
+import SearchPage from "./client/pages/SearchPage.jsx";
 // ===== Admin Pages =====
 import DashboardLayout from "./admin/pages/Dashboard.jsx";
 import CategoriesPage from "./admin/pages/CategoriesPage.jsx";
@@ -37,7 +37,7 @@ const RedirectIfLoggedIn = ({ children }) => {
 
   if (user?.role === "USER") return <Navigate to="/" replace />;
   if (user?.role === "ADMIN") return <Navigate to="/admin/products" replace />;
-
+  
   return children;
 };
 
@@ -63,6 +63,8 @@ export default function App() {
         }
       />
       <Route path="/product/:id" element={<ProductDetails />} />
+      <Route path="/search/:keyword" element={<SearchPage/>}/>     
+       {/* <Route path="/privacy-policy" element={<Privacy-policyPage/>}/> */}
       {/* ===== Customer protected routes ===== */}
       <Route
         path="/cart"

@@ -112,7 +112,13 @@ export default function Navbar() {
   const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+const [searchTerm, setSearchTerm] = useState("");
 
+const handleSearch = () => {
+  if (searchTerm.trim()) {
+    navigate(`/search/${searchTerm}`);
+  }
+};
   const { user } = useSelector((state) => state.auth);
   const cartLength =
     useSelector(
@@ -320,9 +326,9 @@ export default function Navbar() {
               ))}
               {navigation.pages.map((page) => (
                 <Link
-                  key={page.name}
-                  to={page.href}
-                  className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-800"
+                key={page.name}
+                to={page.href}
+                className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-800"
                 >
                   {page.name}
                 </Link>
@@ -331,10 +337,21 @@ export default function Navbar() {
 
             {/* Right side */}
             <div className="ml-auto flex items-center gap-6">
-              <Link to="/search">
-                <MagnifyingGlassIcon className="h-6 w-6 text-gray-500" />
-              </Link>
-
+                {/* Search Input */}
+ <div className="relative w-80">
+  <input
+    type="text"
+    placeholder="Search here..."
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    className="w-full rounded-md border border-gray-300 pl-3 pr-10 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+    onKeyDown={(e) => e.key === "Enter" && handleSearch()} // enter key
+  />
+  <MagnifyingGlassIcon
+    onClick={handleSearch}
+    className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500 cursor-pointer"
+  />
+</div>
               <Link to="/cart" className="relative">
                 <ShoppingBagIcon className="h-6 w-6 text-gray-500" />
                 {cartLength > 0 && (

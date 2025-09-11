@@ -4,14 +4,12 @@ import storage from "redux-persist/lib/storage";
 
 import { apiSlice } from "../api/apiSlice";
 import addressSlice from "../slices/addressSlice";
-import cartSlice from "../slices/cartSlice";
 import productSlice from "../slices/productSlice";
 import authSlice from "../slices/authSlice";
 
 const rootReducer = combineReducers({
-  [apiSlice.reducerPath]: apiSlice.reducer, // ✅ only this API reducer
+  [apiSlice.reducerPath]: apiSlice.reducer, // RTK Query
   address: addressSlice,
-  cart: cartSlice,
   product: productSlice,
   auth: authSlice,
 });
@@ -19,7 +17,7 @@ const rootReducer = combineReducers({
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["auth", "cart", "address", "product"],
+  whitelist: ["auth", "address", "product"], // ❌ cart removed
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -28,8 +26,10 @@ export const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck: { ignoredActions: ["persist/PERSIST", "persist/REHYDRATE"] },
-    }).concat(apiSlice.middleware), // ✅ only once
+      serializableCheck: {
+        ignoredActions: ["persist/PERSIST", "persist/REHYDRATE"],
+      },
+    }).concat(apiSlice.middleware),
 });
 
 export const persistor = persistStore(store);

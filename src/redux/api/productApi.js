@@ -15,10 +15,12 @@ export const productApi = apiSlice.injectEndpoints({
       query: (category) => `/product/category/${category}`,
       providesTags: (result, error, category) => [{ type: "Product", id: category }]
     }),
-    searchProducts: builder.query({
-      query: (keyword) => `/product/search/${keyword}`,
-      providesTags: ["Product"]
-    }),
+   // redux/api/productApi.js
+searchProducts: builder.query({
+  query: (keyword) => `/product/search/${keyword}`,
+  providesTags: ["Product"]
+}),
+
     createProduct: builder.mutation({
       query: (data) => ({ url: "/product", method: "POST", body: data }),
       invalidatesTags: ["Product"]
