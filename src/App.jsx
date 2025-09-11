@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 // ===== Client Pages =====
 import HomePage from "./client/pages/HomePage.jsx";
 import Login from "./pages/LoginPage.jsx";
-import Register from "./Pages/SignupPage.jsx";
+import Register from "./pages/SignupPage.jsx";
 import ProductDetails from "./client/pages/ProductDetailsPage.jsx";
 import Cart from "./client/pages/CartPage.jsx";
 import Checkout from "./client/pages/checkout/Checkout.jsx";
