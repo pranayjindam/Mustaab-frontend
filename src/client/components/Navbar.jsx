@@ -129,14 +129,22 @@ const handleSearch = () => {
         ) || 0
     );
 
-  const handleLogout = () => {
-    if (confirm("Do you want to Logout?")) {
-      dispatch(logout());
-      dispatch(clearCart());
-      localStorage.removeItem("token");
-      navigate("/signin");
-    }
-  };
+const handleLogout = () => {
+  if (confirm("Do you want to Logout?")) {
+    // 1️⃣ Reset Redux slices
+    dispatch(logout());
+    dispatch(clearCart());
+
+    // 2️⃣ Purge persisted state
+    persistor.purge();
+
+    // 3️⃣ Clear localStorage
+    localStorage.removeItem("token");
+
+    // 4️⃣ Navigate to signin
+    navigate("/signin");
+  }
+};
 
   return (
     <div className="bg-white">
