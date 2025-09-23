@@ -8,7 +8,7 @@ import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import Loader from "../../components/Loader.jsx";
 import Footer from "../components/Footer.jsx";
 import { Zoom, ToastContainer, toast } from "react-toastify";
-
+import Navbar from "../components/Navbar.jsx";
 export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -108,6 +108,8 @@ export default function ProductDetails() {
     (price - (price * (discount || 0)) / 100).toFixed(0);
 
   return (
+    <>
+    <Navbar/>
     <div className="mx-auto px-4 md:px-8">
       {/* Product Details */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-start">
@@ -115,9 +117,9 @@ export default function ProductDetails() {
         <div>
           {selectedImage ? (
             <img
-              src={selectedImage}
-              alt={product.title || product.name}
-              className="w-full rounded-lg shadow-md"
+            src={selectedImage}
+            alt={product.title || product.name}
+            className="w-full rounded-lg shadow-md"
             />
           ) : (
             <div className="w-full h-64 bg-gray-200 flex items-center justify-center rounded-lg">
@@ -128,11 +130,11 @@ export default function ProductDetails() {
           <div className="flex gap-2 mt-4 overflow-x-auto">
             {(product.images || []).map((img, index) => (
               <img
-                key={index}
-                src={img.url || img}
-                alt={product.title || product.name}
-                className="w-20 h-20 object-cover rounded-md cursor-pointer border border-gray-300 hover:border-blue-500"
-                onClick={() => setSelectedImage(img.url || img)}
+              key={index}
+              src={img.url || img}
+              alt={product.title || product.name}
+              className="w-20 h-20 object-cover rounded-md cursor-pointer border border-gray-300 hover:border-blue-500"
+              onClick={() => setSelectedImage(img.url || img)}
               />
             ))}
           </div>
@@ -146,8 +148,8 @@ export default function ProductDetails() {
           <div className="flex items-center gap-1 mt-1">
             {[1, 2, 3, 4, 5].map((_, idx) => (
               <FaStar
-                key={idx}
-                className={idx < avgRating ? "text-yellow-500" : "text-gray-300"}
+              key={idx}
+              className={idx < avgRating ? "text-yellow-500" : "text-gray-300"}
               />
             ))}
             <span className="text-sm text-gray-600 ml-2">
@@ -170,20 +172,20 @@ export default function ProductDetails() {
               <div className="flex gap-2 mt-2">
                 {product.colors.map((color, idx) => (
                   <div
-                    key={idx}
-                    className={`w-12 h-12 rounded-full border cursor-pointer flex items-center justify-center ${
-                      selectedColor === color.name ? "border-4 border-blue-500" : "border-gray-300"
-                    }`}
-                    onClick={() => {
-                      setSelectedColor(color.name);
-                      setSelectedImage(color.image || selectedImage);
-                    }}
+                  key={idx}
+                  className={`w-12 h-12 rounded-full border cursor-pointer flex items-center justify-center ${
+                    selectedColor === color.name ? "border-4 border-blue-500" : "border-gray-300"
+                  }`}
+                  onClick={() => {
+                    setSelectedColor(color.name);
+                    setSelectedImage(color.image || selectedImage);
+                  }}
                   >
                     {color.image && (
                       <img
-                        src={color.image}
-                        alt={color.name}
-                        className="w-full h-full rounded-full object-cover"
+                      src={color.image}
+                      alt={color.name}
+                      className="w-full h-full rounded-full object-cover"
                       />
                     )}
                   </div>
@@ -199,11 +201,11 @@ export default function ProductDetails() {
               <div className="flex gap-2 mt-2 flex-wrap">
                 {product.sizes.map((size) => (
                   <button
-                    key={size}
-                    className={`px-4 py-2 border rounded-md ${
-                      selectedSize === size ? "bg-blue-500 text-white" : "border-gray-300"
-                    }`}
-                    onClick={() => setSelectedSize(size)}
+                  key={size}
+                  className={`px-4 py-2 border rounded-md ${
+                    selectedSize === size ? "bg-blue-500 text-white" : "border-gray-300"
+                  }`}
+                  onClick={() => setSelectedSize(size)}
                   >
                     {size}
                   </button>
@@ -217,13 +219,13 @@ export default function ProductDetails() {
             <button
               className="w-full sm:w-auto px-6 py-3 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition"
               onClick={handleAddToCart}
-            >
+              >
               Add to Cart
             </button>
             <button
               className="w-full sm:w-auto px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition"
               onClick={handleBuyNow}
-            >
+              >
               Buy Now
             </button>
           </div>
@@ -238,7 +240,7 @@ export default function ProductDetails() {
           <button
             className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white p-2 shadow-lg rounded-full z-10"
             onClick={scrollLeft}
-          >
+            >
             <FaChevronLeft className="w-8 h-8 text-gray-600" />
           </button>
 
@@ -250,7 +252,7 @@ export default function ProductDetails() {
                     src={related.images?.[0]?.url || related.images?.[0] || related.thumbnail}
                     alt={related.title || related.name}
                     className="w-full h-32 object-cover rounded-t-lg"
-                  />
+                    />
                   <p className="font-semibold mt-2 text-center px-2 truncate">
                     {related.title || related.name}
                   </p>
@@ -262,7 +264,7 @@ export default function ProductDetails() {
           <button
             className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white p-2 shadow-lg rounded-full z-10"
             onClick={scrollRight}
-          >
+            >
             <FaChevronRight className="w-8 h-8 text-gray-600" />
           </button>
         </div>
@@ -271,5 +273,6 @@ export default function ProductDetails() {
       <Footer />
       <ToastContainer position="top-right" autoClose={1000} theme="light" transition={Zoom} />
     </div>
+      </>
   );
 }
