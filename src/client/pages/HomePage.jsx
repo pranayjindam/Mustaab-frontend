@@ -1,7 +1,7 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import Navbar from "../components/Navbar";
-import Footer from "../components/carousel/Footer";
+import Footer from "../components/Footer";
 import HomeCarousel from "../components/carousel/HomeCarousel";
 import RecentSearches from "../components/RecentSearches";
 import Loader from "../../components/Loader";
@@ -35,6 +35,7 @@ const{data:recentProductsData,isLoading: recentProductsLoading, error:recentProd
 
   return (
     <>
+    {/* <div className="overflow-x-hidden"> */}
       <Navbar />
       <HomeCarousel />
       {user && <RecentSearches recentProducts={recentProducts}/>}
@@ -58,6 +59,7 @@ const{data:recentProductsData,isLoading: recentProductsLoading, error:recentProd
       })}
 
       <Footer />
+      {/* </div> */}
     </>
   );
 }

@@ -6,7 +6,7 @@ import { useAddToCartMutation } from "../../redux/api/cartApi.js";
 import { useSelector } from "react-redux";
 import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import Loader from "../../components/Loader.jsx";
-import Footer from "../components/carousel/Footer.jsx";
+import Footer from "../components/Footer.jsx";
 import { Zoom, ToastContainer, toast } from "react-toastify";
 
 export default function ProductDetails() {

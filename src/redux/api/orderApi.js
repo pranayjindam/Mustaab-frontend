@@ -6,7 +6,7 @@ export const orderApi = apiSlice.injectEndpoints({
     // Place an order
     placeOrder: builder.mutation({
       query: ({ orderData, token }) => ({
-        url: "/orders",
+        url: "orders/",
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: orderData,

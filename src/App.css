@@ -5,7 +5,7 @@ body {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-   
+   overflow-x: hidden;
 
   }
 /* Fix Razorpay modal invalid svg width/height */
@@ -24,14 +24,16 @@ svg[width="auto"], svg[height="auto"] {
   animation: fadeInOut 1.2s ease-in-out infinite;
 }
 
-.slick-track {
-  display: flex !important;
-}
-
-.slick-slide {
-  height: auto !important;
-}
 
 .slick-list {
   overflow: hidden !important;
 }
+.slick-track {
+  display: flex !important;
+}
+.slick-slide {
+  float: none !important;
+  height: auto !important;
+}
+
+

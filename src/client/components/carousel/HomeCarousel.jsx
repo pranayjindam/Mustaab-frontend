@@ -40,18 +40,17 @@ const HomeCarousel = () => {
 
   return (
     <div className="relative w-full mx-auto my-8">
-      <AliceCarousel
-        ref={carouselRef}
-        mouseTracking
-        items={items}
-        autoPlay
-        infinite
-        autoPlayInterval={4000}
-        disableDotsControls
-        disableButtonsControls
-        paddingLeft={10}
-        paddingRight={10}
-      />
+    <AliceCarousel
+  ref={carouselRef}
+  mouseTracking
+  items={items}
+  autoPlay
+  infinite
+  autoPlayInterval={4000}
+  disableDotsControls
+  disableButtonsControls
+/>
+
 
       {/* Navigation Buttons */}
       <button

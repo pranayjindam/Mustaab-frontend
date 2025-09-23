@@ -18,7 +18,13 @@ import ProductsPage from "./admin/pages/ProductsPage.jsx";
 import CarouselPage from "./admin/pages/CarouselPage.jsx";
 import AddressPage from "./admin/pages/AddressPage.jsx";
 import ReviewPage from "./admin/pages/ReviewsPage.jsx";
-
+import OrderSuccess from "./client/pages/checkout/OrderSuceess.jsx";
+import MyOrders from "./client/pages/MyOrdersPage.jsx";
+import PrivacyPolicyPage from "./client/pages/PrivacyPolicyPage.jsx";
+import TermsOfService from "./client/pages/TermsOfService.jsx";
+import Returns from "./client/pages/Returns.jsx";
+import ShippingDelivery from "./client/pages/ShippingDelivery.jsx";
+import Help from "./client/pages/Help.jsx";
 // ===== Protected Route (Redux) =====
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const user = useSelector((state) => state.auth.user);
@@ -64,7 +70,12 @@ export default function App() {
       />
       <Route path="/product/:id" element={<ProductDetails />} />
       <Route path="/search/:keyword" element={<SearchPage/>}/>     
-       {/* <Route path="/privacy-policy" element={<Privacy-policyPage/>}/> */}
+       <Route path="/privacy-policy" element={<PrivacyPolicyPage/>}/>
+       <Route path="/terms-service" element={<TermsOfService/>}/>
+       <Route path="/shipping-delivery" element={<ShippingDelivery/>}/>
+       <Route path="/help" element={<Help/>}/> 
+     
+       <Route path="/returns" element={<Returns/>}/>
       {/* ===== Customer protected routes ===== */}
       <Route
         path="/cart"
@@ -74,6 +85,20 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+      path="/orders/success/:orderId"
+      element={
+        <ProtectedRoute allowedRoles={["USER","ADMIN"]}>
+        <OrderSuccess/>
+        </ProtectedRoute>
+      }/>
+      <Route
+      path="/orders"
+      element={
+        <ProtectedRoute allowedRoles={["USER","ADMIN"]}>
+        <MyOrders/>
+        </ProtectedRoute>
+      }/>
       <Route
         path="/checkout"
         element={

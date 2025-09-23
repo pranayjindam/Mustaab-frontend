@@ -77,7 +77,7 @@ export default function Checkout() {
         }).unwrap();
 
         console.log("Order successfully created:", result);
-        navigate("/orders");
+       navigate(`/orders/success/${result._id}`);
       } catch (err) {
         console.error("Error placing COD order:", err);
         alert("Error placing COD order. Check console for details.");
@@ -129,19 +129,21 @@ export default function Checkout() {
               console.log("Payment verification:", verifyData);
 
               if (verifyData.success) {
-                const orderResult = await placeOrder({
-                  orderData: {
-                    orderItems: formattedItems,
-                    shippingAddress,
-                    paymentMethod: "Razorpay",
-                    totalPrice,
-                    paymentResult: res,
-                  },
-                  token,
-                }).unwrap();
+               const orderResult = await placeOrder({
+  orderData: {
+    orderItems: formattedItems,
+    shippingAddress,
+    paymentMethod: "Razorpay",
+    totalPrice,
+    paymentResult: res,
+  },
+  token,
+}).unwrap();
 
-                console.log("Order successfully created:", orderResult);
-                navigate("/orders");
+console.log("Order successfully created:", orderResult);
+
+// redirect to success page with ID
+navigate(`/orders/success/${orderResult._id}`);
               } else {
                 alert("Payment verification failed");
               }
