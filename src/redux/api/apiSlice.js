@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { logout } from "../slices/authSlice";
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: "https://mustaab.onrender.com/api",
+ baseUrl: import.meta.env.VITE_API_BASE_URL, // 👈 always from env
   prepareHeaders: (headers, { getState }) => {
     const token = getState()?.auth?.token;
     if (token) {
