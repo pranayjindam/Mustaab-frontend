@@ -1,6 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import WishlistPage from "./client/pages/WishlistPage.jsx"; 
 
 // ===== Client Pages =====
 import HomePage from "./client/pages/HomePage.jsx";
@@ -112,6 +113,14 @@ export default function App() {
         element={
           <ProtectedRoute allowedRoles={["USER", "ADMIN"]}>
             <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/wishlist"
+        element={
+          <ProtectedRoute allowedRoles={["USER", "ADMIN"]}>
+            <WishlistPage />
           </ProtectedRoute>
         }
       />
