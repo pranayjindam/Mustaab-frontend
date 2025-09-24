@@ -56,7 +56,7 @@ const sliderSettings = {
 
   return (
 <div className="bg-white py-6">
-  <div className="max-w-screen-xl mx-auto px-2 sm:px-4">
+  <div className="max-w-full mx-auto px-2 sm:px-4">
     <h2 className="text-2xl font-bold tracking-tight text-gray-900 mb-4">{title}</h2>
     <div className="relative shadow-md">
       <Slider {...sliderSettings}>

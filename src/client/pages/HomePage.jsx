@@ -11,6 +11,7 @@ import { useGetAllProductsQuery } from "../../redux/api/productApi";
 import { all } from "axios";
 import { useGetRecentQuery,useTrackViewMutation } from "../../redux/api/recentApi";
 import { use } from "react";
+import Sidebar from "../components/Sidebar";
 export default function HomePage() {
   const { user } = useSelector((state) => state.auth);
 
@@ -37,6 +38,7 @@ const{data:recentProductsData,isLoading: recentProductsLoading, error:recentProd
     <>
     {/* <div className="overflow-x-hidden"> */}
       <Navbar />
+      <Sidebar/>
       <HomeCarousel />
       {user && <RecentSearches recentProducts={recentProducts}/>}
 

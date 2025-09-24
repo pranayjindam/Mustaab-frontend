@@ -52,7 +52,7 @@ export default function App() {
   return (
     <Routes>
       {/* ===== Public client routes ===== */}
-      <Route path="/" element={<HomePage />} />
+     
       <Route
         path="/signin"
         element={
@@ -74,6 +74,7 @@ export default function App() {
        <Route path="/privacy-policy" element={<PrivacyPolicyPage/>}/>
        <Route path="/terms-service" element={<TermsOfService/>}/>
        <Route path="/shipping-delivery" element={<ShippingDelivery/>}/>
+        <Route path="/" element={<HomePage/>} />
        <Route path="/help" element={<Help/>}/> 
      
        <Route path="/returns" element={<Returns/>}/>
@@ -83,6 +84,14 @@ export default function App() {
         element={
           <ProtectedRoute allowedRoles={["USER","ADMIN"]}>
             <Cart/>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/wishlist"
+        element={
+          <ProtectedRoute allowedRoles={["USER","ADMIN"]}>
+            <WishlistPage/>
           </ProtectedRoute>
         }
       />

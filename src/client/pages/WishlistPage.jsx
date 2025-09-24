@@ -1,94 +1,52 @@
-import React, { useState } from 'react';
-import { FaTrash, FaShoppingCart } from 'react-icons/fa';
+import React from "react";
+import { useGetWishlistQuery, useDeleteWishlistItemMutation, useClearWishlistMutation } from "../../redux/api/wishlistApi";
 
 const WishlistPage = () => {
-  // Example data (later this can come from Redux, Context API, or API call)
-  const [wishlist, setWishlist] = useState([
-    {
-      id: 1,
-      name: 'Wireless Headphones',
-      price: 2999,
-      image: 'https://via.placeholder.com/150',
-    },
-    {
-      id: 2,
-      name: 'Smart Watch',
-      price: 4999,
-      image: 'https://via.placeholder.com/150',
-    },
-  ]);
+  const { data: wishlist, isLoading } = useGetWishlistQuery();
+  const [deleteWishlistItem] = useDeleteWishlistItemMutation();
+  const [clearWishlist] = useClearWishlistMutation();
 
-  // Remove item from wishlist
-  const removeFromWishlist = (id) => {
-    setWishlist(wishlist.filter((item) => item.id !== id));
+  const handleRemove = async (productId) => {
+    try {
+      await deleteWishlistItem(productId).unwrap();
+    } catch (err) {
+      console.error("Error removing wishlist item:", err);
+    }
   };
 
-  // Move item to cart (dummy action for now)
-  const moveToCart = (item) => {
-    alert(`${item.name} moved to cart!`);
-    removeFromWishlist(item.id);
+  const handleClear = async () => {
+    try {
+      await clearWishlist().unwrap();
+    } catch (err) {
+      console.error("Error clearing wishlist:", err);
+    }
   };
+
+  if (isLoading) return <p>Loading...</p>;
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>My Wishlist ❤️</h1>
-
-      {wishlist.length === 0 ? (
-        <p>Your wishlist is empty.</p>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {wishlist.map((item) => (
-            <div
-              key={item.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                border: '1px solid #ddd',
-                borderRadius: '8px',
-                padding: '10px',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-              }}
+    <div className="p-4">
+      <h2 className="text-2xl font-bold mb-4">My Wishlist</h2>
+      {wishlist?.products?.length === 0 && <p>No items in wishlist</p>}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {wishlist?.products?.map((product) => (
+          <div key={product.productId} className="border p-2 rounded relative">
+            <img src={product.image} alt={product.name} className="w-full h-40 object-contain" />
+            <h3 className="font-semibold mt-2">{product.name}</h3>
+            <p className="text-gray-600">₹{product.price}</p>
+            <button
+              onClick={() => handleRemove(product.productId)}
+              className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded"
             >
-              <img
-                src={item.image}
-                alt={item.name}
-                style={{ width: '100px', borderRadius: '8px', marginRight: '20px' }}
-              />
-              <div style={{ flex: 1 }}>
-                <h3>{item.name}</h3>
-                <p>₹{item.price}</p>
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  onClick={() => moveToCart(item)}
-                  style={{
-                    backgroundColor: '#4CAF50',
-                    color: 'white',
-                    border: 'none',
-                    padding: '8px 12px',
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <FaShoppingCart /> Add to Cart
-                </button>
-                <button
-                  onClick={() => removeFromWishlist(item.id)}
-                  style={{
-                    backgroundColor: '#f44336',
-                    color: 'white',
-                    border: 'none',
-                    padding: '8px 12px',
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <FaTrash /> Remove
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+              Remove
+            </button>
+          </div>
+        ))}
+      </div>
+      {wishlist?.products?.length > 0 && (
+        <button onClick={handleClear} className="mt-4 bg-gray-800 text-white px-4 py-2 rounded">
+          Clear Wishlist
+        </button>
       )}
     </div>
   );

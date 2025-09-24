@@ -1,40 +1,39 @@
-// src/redux/api/wishlistApi.js
 import { apiSlice } from "./apiSlice";
 
 export const wishlistApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getWishlist: builder.query({
       query: () => "/wishlist/get",
-      providesTags: ["Wishlist"],
+      providesTags: [{ type: "Wishlist", id: "LIST" }],
     }),
-    addWishlist: builder.mutation({
+    addWishlistItem: builder.mutation({
       query: (product) => ({
         url: "/wishlist/add",
         method: "POST",
         body: product,
       }),
-      invalidatesTags: ["Wishlist"],
+      invalidatesTags: [{ type: "Wishlist", id: "LIST" }],
     }),
     deleteWishlistItem: builder.mutation({
       query: (productId) => ({
         url: `/wishlist/delete/${productId}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Wishlist"],
+      invalidatesTags: [{ type: "Wishlist", id: "LIST" }],
     }),
     clearWishlist: builder.mutation({
       query: () => ({
         url: "/wishlist/clear",
         method: "DELETE",
       }),
-      invalidatesTags: ["Wishlist"],
+      invalidatesTags: [{ type: "Wishlist", id: "LIST" }],
     }),
   }),
 });
 
 export const {
   useGetWishlistQuery,
-  useAddWishlistMutation,
+  useAddWishlistItemMutation,
   useDeleteWishlistItemMutation,
   useClearWishlistMutation,
 } = wishlistApi;

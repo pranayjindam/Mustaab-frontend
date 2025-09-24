@@ -22,6 +22,7 @@ import {
 } from "@headlessui/react";
 import {
   Bars3Icon,
+  HeartIcon,
   MagnifyingGlassIcon,
   ShoppingBagIcon,
   XMarkIcon,
@@ -206,7 +207,7 @@ export default function Navbar() {
             {/* Right side: search/cart/user */}
             <div className="ml-auto flex items-center gap-4">
               {/* Search */}
-              <div className="relative w-40 sm:w-64">
+              <div className="relative  sm:w-94">
                 <input
                   type="text"
                   placeholder="Search..."
@@ -219,6 +220,10 @@ export default function Navbar() {
               </div>
 
               {/* Cart */}
+              <Link to="/wishlist" className="relative">
+                <HeartIcon className="h-6 w-6 text-gray-500" />
+                {cartLength > 0 && <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1">{cartLength}</span>}
+              </Link>
               <Link to="/cart" className="relative">
                 <ShoppingBagIcon className="h-6 w-6 text-gray-500" />
                 {cartLength > 0 && <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1">{cartLength}</span>}
