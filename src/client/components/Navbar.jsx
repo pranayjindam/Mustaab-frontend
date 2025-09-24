@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../redux/slices/authSlice";
 import { FaUser } from "react-icons/fa";
+import { FaRegHeart } from "react-icons/fa";
 import {
   Dialog,
   DialogBackdrop,
