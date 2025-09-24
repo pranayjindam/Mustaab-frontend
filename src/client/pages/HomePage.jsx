@@ -38,7 +38,7 @@ const{data:recentProductsData,isLoading: recentProductsLoading, error:recentProd
     <>
     {/* <div className="overflow-x-hidden"> */}
       <Navbar />
-      <Sidebar/>
+      {/* <Sidebar/> */}
       <HomeCarousel />
       {user && <RecentSearches recentProducts={recentProducts}/>}
 
