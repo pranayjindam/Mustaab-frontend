@@ -38,7 +38,7 @@ export default function OrderSuccess() {
     orderItems,
     shippingAddress,
     createdAt,
-  } = order.order; // <-- use order directly
+  } = order; // <-- use order directly
   return (
     <div className="bg-gray-50 min-h-screen flex items-center justify-center p-4">
       <div className="bg-white shadow-lg rounded-2xl max-w-3xl w-full p-8">

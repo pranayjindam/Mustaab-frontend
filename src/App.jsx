@@ -7,7 +7,7 @@ import WishlistPage from "./client/pages/WishlistPage.jsx";
 import HomePage from "./client/pages/HomePage.jsx";
 import Login from "./pages/LoginPage.jsx";
 import Register from "./pages/SignupPage.jsx";
-import ProductDetails from "./client/pages/ProductDetailsPage.jsx";
+import ProductDetailsPage from "./client/pages/ProductDetailsPage.jsx";
 import Cart from "./client/pages/CartPage.jsx";
 import Checkout from "./client/pages/checkout/Checkout.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
@@ -26,6 +26,8 @@ import TermsOfService from "./client/pages/TermsOfService.jsx";
 import Returns from "./client/pages/Returns.jsx";
 import ShippingDelivery from "./client/pages/ShippingDelivery.jsx";
 import Help from "./client/pages/Help.jsx";
+import OrdersPage from "./admin/pages/OrdersPage.jsx";
+
 // ===== Protected Route (Redux) =====
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const user = useSelector((state) => state.auth.user);
@@ -69,7 +71,7 @@ export default function App() {
           </RedirectIfLoggedIn>
         }
       />
-      <Route path="/product/:id" element={<ProductDetails />} />
+      <Route path="/product/:id" element={<ProductDetailsPage />} />
       <Route path="/search/:keyword" element={<SearchPage/>}/>     
        <Route path="/privacy-policy" element={<PrivacyPolicyPage/>}/>
        <Route path="/terms-service" element={<TermsOfService/>}/>
@@ -145,6 +147,17 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/orders"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <DashboardLayout>
+              <OrdersPage />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      
       <Route
         path="/admin/dashboard"
         element={

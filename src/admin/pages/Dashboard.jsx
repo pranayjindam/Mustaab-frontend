@@ -19,6 +19,12 @@ export default function DashboardLayout({ children }) {
             Products
           </NavLink>
           <NavLink
+            to="/admin/orders"
+            className={({ isActive }) => (isActive ? activeClass : normalClass)}
+          >
+            Orders
+          </NavLink>
+          <NavLink
             to="/admin/categories"
             className={({ isActive }) => (isActive ? activeClass : normalClass)}
           >
@@ -30,12 +36,7 @@ export default function DashboardLayout({ children }) {
           >
             Carousels
           </NavLink>
-          <NavLink
-            to="/admin/address"
-            className={({ isActive }) => (isActive ? activeClass : normalClass)}
-          >
-            Addresses
-          </NavLink>
+        
           <NavLink
             to="/admin/reviews"
             className={({ isActive }) => (isActive ? activeClass : normalClass)}

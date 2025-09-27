@@ -22,7 +22,7 @@ searchProducts: builder.query({
 }),
 
     createProduct: builder.mutation({
-      query: (data) => ({ url: "/product", method: "POST", body: data }),
+      query: (data) => ({ url: "/product/add", method: "POST", body: data }),
       invalidatesTags: ["Product"]
     }),
     updateProduct: builder.mutation({

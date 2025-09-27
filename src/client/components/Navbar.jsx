@@ -63,7 +63,6 @@ export default function Navbar() {
       },
     ],
     pages: [
-      { name: "Company", href: "/company" },
       { name: "Stores", href: "/stores" },
     ],
   };
@@ -167,7 +166,7 @@ export default function Navbar() {
             <Link to="/" className="ml-4 flex lg:ml-0">
               <h1 className="text-3xl font-bold text-red-600">LSH</h1>
             </Link>
-
+             
             {/* Categories */}
             <PopoverGroup className="hidden lg:ml-8 lg:flex space-x-4">
               {navigation.categories.map((cat) => (
