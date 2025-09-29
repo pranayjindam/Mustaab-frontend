@@ -11,12 +11,15 @@ export default function SearchPage() {
   const { data, isLoading, error } = useSearchProductsQuery(keyword, { skip: !keyword });
   const products = data?.products || [];
 
-  // Filters state from Sidebar
   const [filters, setFilters] = useState({});
+  const [sortBy, setSortBy] = useState("featured"); // default
 
-  // Apply filters on products
+  // Apply filters + sorting
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
+    let result = [...products];
+
+    // 🔹 Apply filters
+    result = result.filter((product) => {
       // Color filter
       if (filters.color?.length > 0) {
         const productColors = product.colors?.map((c) => c.name.toLowerCase()) || [];
@@ -36,7 +39,19 @@ export default function SearchPage() {
 
       return true;
     });
-  }, [products, filters]);
+
+    // 🔹 Apply sorting
+    if (sortBy === "lowToHigh") {
+      result.sort((a, b) => a.price - b.price);
+    } else if (sortBy === "highToLow") {
+      result.sort((a, b) => b.price - a.price);
+    } else if (sortBy === "newest") {
+      result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+    // "featured" = leave order as is (default from API)
+
+    return result;
+  }, [products, filters, sortBy]);
 
   return (
     <>
@@ -45,7 +60,13 @@ export default function SearchPage() {
       <div className="flex pt-20 min-h-screen">
         {/* Sidebar */}
         <aside>
-          <Sidebar setFilters={setFilters} filters={filters} />
+         <Sidebar
+  products={products}
+  setFilters={setFilters}
+  setSortBy={setSortBy}
+  // ✅ pass products
+/>
+
         </aside>
 
         {/* Main Content */}
