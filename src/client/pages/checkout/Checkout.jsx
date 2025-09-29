@@ -1,35 +1,41 @@
-"use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useGetCartQuery } from "../../../redux/api/cartApi";
-import { usePlaceOrderMutation } from "../../../redux/api/orderApi";
+import {
+  usePlaceOrderMutation,
+  useCreateRazorpayOrderMutation,
+  useVerifyRazorpayPaymentMutation,
+} from "../../../redux/api/orderApi";
 import Loader from "../../../components/Loader";
 import AddressComponent from "./AddressComponent";
+import CheckoutNavbar from "./CheckoutNavbar";
 
 export default function Checkout() {
   const location = useLocation();
   const navigate = useNavigate();
   const buyNowProduct = location.state?.buyNowProduct;
+
   const { data: cart, isLoading } = useGetCartQuery();
   const token = useSelector((state) => state.auth?.token);
   const selectedAddress = useSelector((state) => state.address.selectedAddress);
 
-  const [paymentMethod, setPaymentMethod] = useState("COD");
+  const [paymentMethod, setPaymentMethod] = useState("pay now");
   const [placeOrder] = usePlaceOrderMutation();
+  const [createRazorpayOrder] = useCreateRazorpayOrderMutation();
+  const [verifyRazorpayPayment] = useVerifyRazorpayPaymentMutation();
 
-  if (!token) {
-    navigate("/login");
-    return null;
-  }
+  useEffect(() => {
+    if (!token) navigate("/login");
+  }, [token, navigate]);
 
+  if (!token) return null;
   if (isLoading) return <Loader />;
 
   const items = buyNowProduct ? [buyNowProduct] : cart?.items || [];
-
-  // Format items for backend
+  console.log(items);
   const formattedItems = items.map((i) => ({
-    product: i._id || i.productId, // backend expects product ID
+    product: i._id || i.productId,
     name: i.name,
     image: i.image,
     price: i.price,
@@ -54,107 +60,68 @@ export default function Checkout() {
   );
 
   const handlePlaceOrder = async () => {
-    if (!shippingAddress) {
-      alert("Please select a shipping address");
-      return;
-    }
+    if (!shippingAddress) return alert("Please select a shipping address");
 
-    console.log("Shipping Address:", shippingAddress);
-    console.log("Items:", formattedItems);
-    console.log("Payment Method:", paymentMethod);
-    console.log("Total Price:", totalPrice);
-
+    // ----------- COD ----------- //
     if (paymentMethod === "COD") {
       try {
         const result = await placeOrder({
-          orderData: {
-            orderItems: formattedItems,
-            shippingAddress,
-            paymentMethod: "COD",
-            totalPrice,
-          },
+          orderItems: formattedItems,
+          shippingAddress,
+          paymentMethod: "COD",
+          totalPrice,
+          token,
+        }).unwrap();
+        navigate(`/orders/success/${result._id}`);
+      } catch (err) {
+        console.error(err);
+        alert("COD order failed");
+      }
+      return;
+    }
+
+    // ----------- Razorpay ----------- //
+    if (paymentMethod === "pay now") {
+      try {
+        // 1️⃣ Create Razorpay order via backend
+        const razorpayOrder = await createRazorpayOrder({
+          amount: Math.round(totalPrice * 100), // paise
           token,
         }).unwrap();
 
-        console.log("Order successfully created:", result);
-       navigate(`/orders/success/${result._id}`);
-      } catch (err) {
-        console.error("Error placing COD order:", err);
-        alert("Error placing COD order. Check console for details.");
-      }
-    } else {
-      // Razorpay flow
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/payment/create-order`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ amount: totalPrice * 100 }),
-          }
-        );
+        if (!razorpayOrder?.id) return alert("Failed to create Razorpay order");
 
-        const data = await response.json();
-        console.log("Razorpay order created:", data);
-
+        // 2️⃣ Razorpay checkout options
         const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-          amount: data.amount,
-          currency: "INR",
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID, // test key
+          amount: razorpayOrder.amount,
+          currency: razorpayOrder.currency,
           name: "Mustaab",
           description: "Order Payment",
-          order_id: data.id,
-          handler: async function (res) {
+          order_id: razorpayOrder.id,
+          handler: async (response) => {
             try {
-              const verifyRes = await fetch(
-                `${import.meta.env.VITE_API_BASE_URL}/payment/verify`,
-                {
-                  method: "POST",
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    ...res,
-                    items: formattedItems,
-                    addressId: shippingAddress,
-                  }),
-                }
-              );
-
-              const verifyData = await verifyRes.json();
-              console.log("Payment verification:", verifyData);
+              // 3️⃣ Verify payment on backend
+              const verifyData = await verifyRazorpayPayment({
+                response,
+                items: formattedItems,
+                shippingAddress,
+                totalPrice,
+                token,
+              }).unwrap();
 
               if (verifyData.success) {
-               const orderResult = await placeOrder({
-  orderData: {
-    orderItems: formattedItems,
-    shippingAddress,
-    paymentMethod: "Razorpay",
-    totalPrice,
-    paymentResult: res,
-  },
-  token,
-}).unwrap();
-
-console.log("Order successfully created:", orderResult);
-
-// redirect to success page with ID
-navigate(`/orders/success/${orderResult._id}`);
+                navigate(`/orders/success/${verifyData.order._id}`);
               } else {
                 alert("Payment verification failed");
               }
             } catch (err) {
-              console.error("Error verifying payment:", err);
-              alert("Payment verification error. Check console.");
+              console.error(err);
+              alert("Payment verification failed");
             }
           },
           prefill: {
             name: shippingAddress.fullName,
-            email: "test@example.com",
             contact: shippingAddress.phoneNumber,
           },
           theme: { color: "#3399cc" },
@@ -163,18 +130,20 @@ navigate(`/orders/success/${orderResult._id}`);
         const rzp = new window.Razorpay(options);
         rzp.open();
       } catch (err) {
-        console.error("Error starting Razorpay:", err);
-        alert("Error initiating payment. Check console.");
+        console.error(err);
+        alert("Payment failed");
       }
     }
   };
 
   return (
+    <>
+    <CheckoutNavbar/>
     <div className="max-w-4xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Checkout</h1>
+      {/* <h1 className="text-2xl font-bold mb-4">Checkout</h1> */}
+      <h4 className="font-semibold">Delivering to:</h4>
       <AddressComponent />
 
-      {/* Payment Method */}
       <div className="my-4">
         <h2 className="font-semibold mb-2">Payment Method</h2>
         <label className="flex items-center gap-2">
@@ -191,15 +160,14 @@ navigate(`/orders/success/${orderResult._id}`);
           <input
             type="radio"
             name="paymentMethod"
-            value="Razorpay"
-            checked={paymentMethod === "Razorpay"}
+            value="pay now"
+            checked={paymentMethod === "pay now"}
             onChange={() => setPaymentMethod("Razorpay")}
           />
-          Razorpay
+          pay now
         </label>
       </div>
 
-      {/* Cart Items */}
       {formattedItems.map((item, idx) => (
         <div key={idx} className="flex items-center justify-between border-b py-3">
           <div className="flex items-center gap-4">
@@ -210,25 +178,23 @@ navigate(`/orders/success/${orderResult._id}`);
             />
             <div>
               <p className="font-semibold">{item.name}</p>
-              <p className="text-sm text-gray-600">
-                Qty: {item.quantity}
-              </p>
+              <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
             </div>
           </div>
           <p className="font-semibold">₹{item.price * item.quantity}</p>
         </div>
       ))}
 
-      {/* Total + Button */}
       <div className="mt-6 flex justify-between items-center">
         <p className="text-xl font-bold">Total: ₹{totalPrice.toFixed(2)}</p>
         <button
           className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600"
           onClick={handlePlaceOrder}
         >
-          {paymentMethod === "COD" ? "Place Order" : "Pay with Razorpay"}
+          {paymentMethod === "COD" ? "Place Order" : "pay now"}
         </button>
       </div>
     </div>
+    </>
   );
 }

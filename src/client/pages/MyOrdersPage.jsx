@@ -1,106 +1,82 @@
-// src/pages/MyOrders.jsx
+// src/pages/OrdersPage.jsx
 import React from "react";
 import { useSelector } from "react-redux";
-import { useGetUserOrdersQuery } from "@/redux/api/orderApi";
-import { Link } from "react-router-dom";
+import { useGetUserOrdersQuery } from "../../redux/api/orderApi";
 import { Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-export default function MyOrders() {
-  const token = useSelector((state) => state.auth?.token);
-  const { data, isLoading, isError } = useGetUserOrdersQuery(token);
+const OrdersPage = () => {
+  const { token, isAuthenticated } = useSelector((state) => state.auth);
+  const { data: orders = [], isLoading, isError } = useGetUserOrdersQuery(
+    { token },
+    { skip: !token }
+  );
+  const navigate = useNavigate();
 
-  const orders = data?.orders || [];
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="animate-spin w-10 h-10 text-blue-600" />
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-red-600 text-lg font-semibold">
-          Failed to load your orders.
-        </p>
-      </div>
-    );
-  }
-
-  if (!orders.length) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-600 text-lg">You have no orders yet.</p>
-      </div>
-    );
-  }
+  if (!isAuthenticated)
+    return <p className="text-red-500">⚠️ Please log in to see your orders.</p>;
+  if (isLoading)
+    return <Loader2 className="animate-spin w-8 h-8 text-gray-600" />;
+  if (isError) return <p className="text-red-500">❌ Error loading orders.</p>;
 
   return (
-    <div className="bg-gray-50 min-h-screen p-4">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">My Orders</h1>
+    <div className="p-6 max-w-6xl mx-auto">
+      <h2 className="text-2xl font-bold mb-6">My Orders</h2>
 
-        <div className="space-y-6">
-          {orders.map((order) => (
-            <div
-              key={order._id}
-              className="bg-white shadow rounded-lg p-4 border"
-            >
-              <div className="flex justify-between items-center mb-3">
-                <div>
-                  <p>
-                    <span className="font-medium">Order ID:</span> {order._id}
-                  </p>
-                  <p>
-                    <span className="font-medium">Status:</span>{" "}
-                    {order.orderStatus}
+      {orders.length === 0 && <p className="text-gray-600">No orders found.</p>}
+
+      <div className="space-y-4">
+        {orders.map((order) => (
+          <div
+            key={order._id}
+            className="border rounded-lg bg-white shadow-sm hover:shadow-md cursor-pointer"
+            onClick={() => navigate(`/orders/${order._id}`)}
+          >
+            {order.orderItems.map((item) => (
+              <div
+                key={item._id}
+                className="flex items-center gap-4 p-4 border-b last:border-0"
+              >
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="w-24 h-24 object-cover border rounded"
+                />
+                <div className="flex-1">
+                  <p className="font-medium text-lg">{item.name}</p>
+                  {item.size && (
+                    <p className="text-sm text-gray-500">Size: {item.size}</p>
+                  )}
+                  {item.color && (
+                    <p className="text-sm text-gray-500">Color: {item.color}</p>
+                  )}
+                  <p className="text-sm text-gray-500">
+                    Qty: {item.quantity}
                   </p>
                 </div>
-                <p className="font-semibold text-lg">
-                  ₹{order.totalPrice.toFixed(2)}
-                </p>
-              </div>
+                <p className="font-semibold text-lg">₹{item.price}</p>
+<div className="px-4 py-2 bg-gray-50 rounded-b-lg flex justify-between items-center">
+  <h1
+    className={`text-sm font-semibold px-3 py-1 rounded-full 
+      ${order.status === "Delivered" ? "bg-green-100 text-green-700" : ""} 
+      ${order.status === "Cancelled" ? "bg-red-100 text-red-700" : ""} 
+      ${["Pending", "Processing", "Dispatched"].includes(order.status) ? "bg-yellow-100 text-yellow-700" : ""} 
+      ${!["Delivered", "Cancelled", "Pending", "Processing", "Dispatched"].includes(order.status) ? "bg-gray-100 text-gray-700" : ""}`}
+  >
+    {order.status}
+  </h1>
 
-              <div className="border-t pt-3">
-                {order.orderItems.map((item) => (
-                  <div
-                    key={item._id}
-                    className="flex items-center justify-between py-2"
-                  >
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-16 h-16 object-cover rounded"
-                      />
-                      <div>
-                        <p className="font-medium">{item.name}</p>
-                        <p className="text-sm text-gray-600">
-                          Qty: {item.quantity}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="font-semibold">
-                      ₹{(item.price * item.quantity).toFixed(2)}
-                    </p>
-                  </div>
-                ))}
+  <p className="text-sm text-gray-500">
+    Placed on: {new Date(order.createdAt).toLocaleDateString()}
+  </p>
+</div>
               </div>
-
-              <div className="mt-3 text-right">
-                <Link
-                  to={`/order/${order._id}`}
-                  className="text-blue-600 font-medium hover:underline"
-                >
-                  View Details
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   );
-}
+};
+
+export default OrdersPage;

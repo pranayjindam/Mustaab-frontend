@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../redux/slices/authSlice";
 import { FaUser } from "react-icons/fa";
 import { FaRegHeart } from "react-icons/fa";
+import {persistor} from "../../redux/store/store"
 import {
   Dialog,
   DialogBackdrop,
@@ -82,14 +83,38 @@ export default function Navbar() {
     if (searchTerm.trim()) navigate(`/search/${searchTerm}`);
   };
 
-  const handleLogout = () => {
-    if (confirm("Do you want to Logout?")) {
-      dispatch(logout());
-      localStorage.removeItem("token");
-      navigate("/signin");
-    }
-  };
+const handleLogout = () => {
+    if (!confirm("Do you want to logout?")) return;
 
+    // 1️⃣ Reset Redux state
+    dispatch(logout());
+
+    // 2️⃣ Flush and purge persisted slices
+    persistor.flush();  // ensures pending state is written before purge
+    persistor.purge();  // clears auth, address, product slices
+
+    // 3️⃣ Remove any manually stored keys
+    [
+      "buyNowProduct",
+      "jwt",
+      "rzp_checkout_anon_id",
+      "rzp_device_id",
+      "rzp_stored_checkout_id",
+    ].forEach((key) => localStorage.removeItem(key));
+
+    // 4️⃣ Clear sessionStorage
+    sessionStorage.clear();
+
+    // 5️⃣ Optional: clear cookies
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c
+        .replace(/^ +/, "")
+        .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
+
+    // 6️⃣ Navigate to signin page
+    navigate("/signin");
+  };
   return (
     <div className="bg-white">
       {/* Top strip */}

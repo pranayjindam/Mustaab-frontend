@@ -43,7 +43,7 @@ const Footer = () => {
         <div className="border-t border-gray-300 mt-8 pt-6 text-center text-sm text-gray-800">
           <p>
             <Link to="/privacy-policy" className="hover:text-blue-700 mx-2">Privacy Policy</Link> | 
-            <Link to="/terms-service" className="hover:text-blue-700 mx-2">Terms of Service</Link> | 
+            <Link to="/terms-service" className="hover:text-blue-700 mx-2">Terms & Conditions</Link> | 
             <Link to="/returns" className="hover:text-blue-700 mx-2">Returns & Refunds</Link> | 
             <Link to="/shipping-delivery" className="hover:text-blue-700 mx-2">Shipping & Delivery</Link> | 
             <Link to="/help" className="hover:text-blue-700 mx-2">Help & Support</Link>

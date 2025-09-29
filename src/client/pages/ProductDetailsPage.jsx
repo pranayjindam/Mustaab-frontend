@@ -152,6 +152,8 @@ export default function ProductDetails() {
           {/* Info */}
           <div>
             <h1 className="text-3xl font-bold">{product.title || product.name}</h1>
+
+            {/* Rating */}
             <div className="flex items-center gap-1 mt-2">
               {[1, 2, 3, 4, 5].map((_, idx) => (
                 <FaStar key={idx} className={idx < avgRating ? "text-yellow-500" : "text-gray-300"} />
@@ -160,11 +162,41 @@ export default function ProductDetails() {
             </div>
 
             <p className="text-gray-700 mt-4">{product.description}</p>
+
+            {/* Price */}
             <p className="text-2xl font-semibold text-red-600 mt-2">
               ₹{getDiscountedPrice(product.price, product.discount)}
               <span className="text-gray-500 line-through ml-2">₹{product.price}</span>
             </p>
+
+            {/* Policy Badges
+            <div className="flex gap-3 mt-2 flex-wrap">
+              {product.isReturnable && (
+                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Returnable</span>
+              )}
+              {product.isExchangeable && (
+                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">Exchangeable</span>
+              )}
+              {product.isCancelable && (
+                <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">Cancelable</span>
+              )}
+            </div> */}
+
             <p className="text-sm text-green-600 mt-1">In Stock: {product.stock}</p>
+
+            {/* Detailed Policies */}
+           {/* Detailed Policies */}
+<div className="mt-4">
+  {/* <h3 className="font-semibold text-lg">Policies:</h3> */}
+  <ul className="mt-2 space-y-1 text-sm text-gray-700">
+    {product.isReturnable && <li>● Return and Exchange within 7 days</li>}
+    {!product.isCancelable && <li>● No Cancellation Available</li>}
+    {!product.isReturnable && !product.isExchangeable && !product.isCancelable && (
+      <li>● No returns, exchanges, or cancellations</li>
+    )}
+  </ul>
+</div>
+
 
             {/* Colors */}
             {product.colors?.length > 0 && (

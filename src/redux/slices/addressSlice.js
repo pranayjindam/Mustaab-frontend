@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { logout } from "./authSlice"; // import logout action
 
 const initialState = {
   selectedAddress: null,
@@ -11,6 +12,12 @@ const addressSlice = createSlice({
     setSelectedAddress: (state, action) => {
       state.selectedAddress = action.payload;
     },
+  },
+  extraReducers: (builder) => {
+    // Reset address on logout
+    builder.addCase(logout, (state) => {
+      state.selectedAddress = null;
+    });
   },
 });
 

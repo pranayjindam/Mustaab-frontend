@@ -267,6 +267,25 @@ export default function ProductForm({ product, onClose }) {
             />
             Featured
           </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="isReturnable"
+              checked={form.isReturnable}
+              onChange={handleChange}
+            />
+            Returnable
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="isExchangeable"
+              checked={form.isExchangeable}
+              onChange={handleChange}
+            />
+            Exchangeable
+          </label>
+        
 
           <div className="flex justify-end gap-2 mt-4">
             <button

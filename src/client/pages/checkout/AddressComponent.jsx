@@ -117,7 +117,7 @@ const AddressComponent = () => {
       {/* Default address */}
       <div className="flex justify-between items-start">
         <div>
-          <h4 className="font-semibold">Delivering to:</h4>
+          
           {selectedAddress && (
             <>
               <p className="font-medium">{selectedAddress.fullName}</p>
