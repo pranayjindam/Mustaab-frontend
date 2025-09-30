@@ -20,7 +20,7 @@ export default function Checkout() {
   const token = useSelector((state) => state.auth?.token);
   const selectedAddress = useSelector((state) => state.address.selectedAddress);
 
-  const [paymentMethod, setPaymentMethod] = useState("pay now");
+  const [paymentMethod, setPaymentMethod] = useState("razorpay"); // ✅ default to razorpay
   const [placeOrder] = usePlaceOrderMutation();
   const [createRazorpayOrder] = useCreateRazorpayOrderMutation();
   const [verifyRazorpayPayment] = useVerifyRazorpayPaymentMutation();
@@ -33,7 +33,6 @@ export default function Checkout() {
   if (isLoading) return <Loader />;
 
   const items = buyNowProduct ? [buyNowProduct] : cart?.items || [];
-  console.log(items);
   const formattedItems = items.map((i) => ({
     product: i._id || i.productId,
     name: i.name,
@@ -81,19 +80,25 @@ export default function Checkout() {
     }
 
     // ----------- Razorpay ----------- //
-    if (paymentMethod === "pay now") {
+    if (paymentMethod === "razorpay") {
       try {
         // 1️⃣ Create Razorpay order via backend
+        console.log("amount is ",totalPrice*100);
+        console.log("token is",token);
         const razorpayOrder = await createRazorpayOrder({
           amount: Math.round(totalPrice * 100), // paise
           token,
         }).unwrap();
 
-        if (!razorpayOrder?.id) return alert("Failed to create Razorpay order");
+        console.log("✅ Razorpay order from backend:", razorpayOrder);
+
+        if (!razorpayOrder?.id) {
+          return alert("Failed to create Razorpay order");
+        }
 
         // 2️⃣ Razorpay checkout options
         const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID, // test key
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
           amount: razorpayOrder.amount,
           currency: razorpayOrder.currency,
           name: "Mustaab",
@@ -116,7 +121,7 @@ export default function Checkout() {
                 alert("Payment verification failed");
               }
             } catch (err) {
-              console.error(err);
+              console.error("❌ Verification error:", err);
               alert("Payment verification failed");
             }
           },
@@ -130,7 +135,7 @@ export default function Checkout() {
         const rzp = new window.Razorpay(options);
         rzp.open();
       } catch (err) {
-        console.error(err);
+        console.error("❌ Razorpay payment error:", err);
         alert("Payment failed");
       }
     }
@@ -138,63 +143,65 @@ export default function Checkout() {
 
   return (
     <>
-    <CheckoutNavbar/>
-    <div className="max-w-4xl mx-auto p-4">
-      {/* <h1 className="text-2xl font-bold mb-4">Checkout</h1> */}
-      <h4 className="font-semibold">Delivering to:</h4>
-      <AddressComponent />
+      <CheckoutNavbar />
+      <div className="max-w-4xl mx-auto p-4">
+        <h4 className="font-semibold">Delivering to:</h4>
+        <AddressComponent />
 
-      <div className="my-4">
-        <h2 className="font-semibold mb-2">Payment Method</h2>
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="paymentMethod"
-            value="COD"
-            checked={paymentMethod === "COD"}
-            onChange={() => setPaymentMethod("COD")}
-          />
-          Cash on Delivery
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="paymentMethod"
-            value="pay now"
-            checked={paymentMethod === "pay now"}
-            onChange={() => setPaymentMethod("Razorpay")}
-          />
-          pay now
-        </label>
-      </div>
-
-      {formattedItems.map((item, idx) => (
-        <div key={idx} className="flex items-center justify-between border-b py-3">
-          <div className="flex items-center gap-4">
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-16 h-16 object-cover rounded"
+        <div className="my-4">
+          <h2 className="font-semibold mb-2">Payment Method</h2>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="paymentMethod"
+              value="COD"
+              checked={paymentMethod === "COD"}
+              onChange={() => setPaymentMethod("COD")}
             />
-            <div>
-              <p className="font-semibold">{item.name}</p>
-              <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
-            </div>
-          </div>
-          <p className="font-semibold">₹{item.price * item.quantity}</p>
+            Cash on Delivery
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="paymentMethod"
+              value="razorpay"
+              checked={paymentMethod === "razorpay"}
+              onChange={() => setPaymentMethod("razorpay")}
+            />
+            Pay Now (Razorpay)
+          </label>
         </div>
-      ))}
 
-      <div className="mt-6 flex justify-between items-center">
-        <p className="text-xl font-bold">Total: ₹{totalPrice.toFixed(2)}</p>
-        <button
-          className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600"
-          onClick={handlePlaceOrder}
-        >
-          {paymentMethod === "COD" ? "Place Order" : "pay now"}
-        </button>
+        {formattedItems.map((item, idx) => (
+          <div
+            key={idx}
+            className="flex items-center justify-between border-b py-3"
+          >
+            <div className="flex items-center gap-4">
+              <img
+                src={item.image}
+                alt={item.name}
+                className="w-16 h-16 object-cover rounded"
+              />
+              <div>
+                <p className="font-semibold">{item.name}</p>
+                <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+              </div>
+            </div>
+            <p className="font-semibold">₹{item.price * item.quantity}</p>
+          </div>
+        ))}
+
+        <div className="mt-6 flex justify-between items-center">
+          <p className="text-xl font-bold">Total: ₹{totalPrice.toFixed(2)}</p>
+          <button
+            className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600"
+            onClick={handlePlaceOrder}
+          >
+            {paymentMethod === "COD" ? "Place COD Order" : "Pay with Razorpay"}
+          </button>
+        </div>
       </div>
-    </div>
     </>
   );
 }
