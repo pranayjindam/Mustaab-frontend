@@ -30,6 +30,7 @@ const OrderDetailsPage = () => {
   const { id } = useParams();
   const { token } = useSelector((state) => state.auth);
   const navigate = useNavigate();
+const selectedAddress = useSelector((state) => state.address.selectedAddress);
 
   const { data, isLoading } = useGetOrderByIdQuery(
     { id, token },
@@ -220,7 +221,6 @@ const OrderDetailsPage = () => {
       order.cancellationStatus !== "Requested"
     );
   };
-
   if (isLoading)
     return (
       <Loader2 className="animate-spin w-8 h-8 text-gray-600 mx-auto mt-10" />
@@ -239,7 +239,7 @@ const OrderDetailsPage = () => {
             <div
               key={item._id}
               className="flex items-center gap-4 border-b last:border-0 pb-3 cursor-pointer"
-              onClick={() => navigate(`/product/${item.productId}`)}
+              onClick={() => navigate(`/product/${item.product}`)}
             >
               <img
                 src={item.image}

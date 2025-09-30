@@ -16,6 +16,7 @@ const AddressComponent = ({ onAddressSelect }) => {
   const { data, isLoading, isError, refetch } = useGetAllAddressesQuery();
   const addresses = data?.addresses || [];
 
+
   const [addAddress] = useAddAddressMutation();
   const [setDefaultAddress] = useSetDefaultAddressMutation();
 
