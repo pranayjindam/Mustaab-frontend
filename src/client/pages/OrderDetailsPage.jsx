@@ -42,6 +42,19 @@ const OrderDetailsPage = () => {
 
   const order = data?.product || data?.order || data;
 
+  // Add new state
+  const [showAddressSelector, setShowAddressSelector] = useState(false);
+
+  // Initialize pickupAddress with default order/shipping address
+  useEffect(() => {
+    if (order?.shippingAddress) {
+      setFormData((prev) => ({
+        ...prev,
+        pickupAddress: `${order.shippingAddress.address}, ${order.shippingAddress.city}, ${order.shippingAddress.state} - ${order.shippingAddress.pincode}`,
+      }));
+    }
+  }, [order]);
+
   const trackerRef = useRef();
   const [animatedStep, setAnimatedStep] = useState(-1);
   const [showReturnForm, setShowReturnForm] = useState(false);
@@ -60,19 +73,6 @@ const OrderDetailsPage = () => {
     order?.status === "Cancelled" ||
     order?.cancellationStatus === "Requested" ||
     order?.cancellationStatus === "Approved";
-
-  // Add new state
-  const [showAddressSelector, setShowAddressSelector] = useState(false);
-
-  // Initialize pickupAddress with default order/shipping address
-  useEffect(() => {
-    if (order?.shippingAddress) {
-      setFormData((prev) => ({
-        ...prev,
-        pickupAddress: `${order.shippingAddress.address}, ${order.shippingAddress.city}, ${order.shippingAddress.state} - ${order.shippingAddress.pincode}`,
-      }));
-    }
-  }, [order]);
 
   // Get appropriate status steps
   const dynamicStatusSteps = isCancellationFlow
@@ -139,16 +139,13 @@ const OrderDetailsPage = () => {
     if (!formData.selectedItemId) {
       return alert("Please select a product item");
     }
-
     if (!formData.reason) {
       return alert("Please select a reason");
     }
-
     if (!formData.pickupAddress) {
       return alert("Please enter pickup address");
     }
 
-    // Image validation for specific reasons
     const requiresImages =
       formData.reason === "Defective / Damaged" ||
       formData.reason === "Wrong Item Delivered";
@@ -159,11 +156,12 @@ const OrderDetailsPage = () => {
 
     try {
       await createReturnRequest({
-        id: order._id,
         token,
-        type: formData.type,
+        orderId: order._id, // ✅ correct field
+        productId: formData.selectedItemId, // ✅ must send selected product
+        type: formData.type.toLowerCase(), // ✅ lowercase enum
         reason: formData.reason,
-        pickupAddress: formData.pickupAddress, // ✅ now filled
+        pickupAddress: formData.pickupAddress,
         newColor: formData.newColor,
         newSize: formData.newSize,
         images: formData.images,
@@ -173,7 +171,7 @@ const OrderDetailsPage = () => {
       setShowReturnForm(false);
       setFormData({
         selectedItemId: "",
-        type: "Return",
+        type: "return", // default lowercase
         reason: "",
         pickupAddress: "",
         newColor: "",
@@ -185,6 +183,8 @@ const OrderDetailsPage = () => {
       alert(err?.data?.message || "Failed to submit request");
     }
   };
+
+  
 
   // Helper to get step icon
   const getStepIcon = (step, idx) => {

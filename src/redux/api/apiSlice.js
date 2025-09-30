@@ -9,7 +9,7 @@ const baseQuery = fetchBaseQuery({
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
     }
-    headers.set("Content-Type", "application/json");
+    // DO NOT set Content-Type here — let the browser handle it
     return headers;
   },
 });
@@ -17,7 +17,6 @@ const baseQuery = fetchBaseQuery({
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await baseQuery(args, api, extraOptions);
 
-  // 🔐 Handle Unauthorized (401)
   if (result.error && result.error.status === 401) {
     api.dispatch(logout());
     window.location.href = "/signin";
@@ -26,9 +25,8 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
   return result;
 };
 
-// ✅ Base API slice
 export const apiSlice = createApi({
-  reducerPath: "api", // will show up as "api" in redux store
+  reducerPath: "api",
   baseQuery: baseQueryWithReauth,
   tagTypes: [
     "User",
@@ -39,7 +37,8 @@ export const apiSlice = createApi({
     "Carousel",
     "Address",
     "Recent",
-    "Wishlist", // 👉 so caching works for wishlist
+    "Wishlist",
+    "ReturnRequests", // add this for caching return requests
   ],
-  endpoints: () => ({}), // endpoints injected in feature files
+  endpoints: () => ({}),
 });
