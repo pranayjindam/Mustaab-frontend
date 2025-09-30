@@ -30,7 +30,7 @@ const OrderDetailsPage = () => {
   const { id } = useParams();
   const { token } = useSelector((state) => state.auth);
   const navigate = useNavigate();
-const selectedAddress = useSelector((state) => state.address.selectedAddress);
+  const selectedAddress = useSelector((state) => state.address.selectedAddress);
 
   const { data, isLoading } = useGetOrderByIdQuery(
     { id, token },
@@ -60,6 +60,19 @@ const selectedAddress = useSelector((state) => state.address.selectedAddress);
     order?.status === "Cancelled" ||
     order?.cancellationStatus === "Requested" ||
     order?.cancellationStatus === "Approved";
+
+  // Add new state
+  const [showAddressSelector, setShowAddressSelector] = useState(false);
+
+  // Initialize pickupAddress with default order/shipping address
+  useEffect(() => {
+    if (order?.shippingAddress) {
+      setFormData((prev) => ({
+        ...prev,
+        pickupAddress: `${order.shippingAddress.address}, ${order.shippingAddress.city}, ${order.shippingAddress.state} - ${order.shippingAddress.pincode}`,
+      }));
+    }
+  }, [order]);
 
   // Get appropriate status steps
   const dynamicStatusSteps = isCancellationFlow
@@ -145,16 +158,16 @@ const selectedAddress = useSelector((state) => state.address.selectedAddress);
     }
 
     try {
-     await createReturnRequest({
-       id: order._id,
-       token,
-       type: formData.type,
-       reason: formData.reason,
-       pickupAddress: formData.pickupAddress, // ✅ now filled
-       newColor: formData.newColor,
-       newSize: formData.newSize,
-       images: formData.images,
-     }).unwrap();
+      await createReturnRequest({
+        id: order._id,
+        token,
+        type: formData.type,
+        reason: formData.reason,
+        pickupAddress: formData.pickupAddress, // ✅ now filled
+        newColor: formData.newColor,
+        newSize: formData.newSize,
+        images: formData.images,
+      }).unwrap();
 
       alert("Request submitted successfully!");
       setShowReturnForm(false);
@@ -571,19 +584,39 @@ const selectedAddress = useSelector((state) => state.address.selectedAddress);
                   </div>
                 )}
 
-                {/* Pickup Address Component */}
+                {/* Pickup Address Section */}
                 <div>
                   <label className="text-xs font-medium text-gray-700 mb-1 block">
                     Pickup Address <span className="text-red-500">*</span>
                   </label>
-                  <AddressComponent
-                    onAddressSelect={(addr) =>
-                      setFormData({
-                        ...formData,
-                        pickupAddress: `${addr.address}, ${addr.city}, ${addr.state} - ${addr.pincode}`,
-                      })
-                    }
-                  />
+
+                  {/* Show default / currently selected address */}
+                  <div className="bg-white p-3 rounded-lg border text-sm text-gray-700">
+                    {formData.pickupAddress || "No address selected"}
+                  </div>
+
+                  {/* Toggle button to change */}
+                  <button
+                    type="button"
+                    onClick={() => setShowAddressSelector(!showAddressSelector)}
+                    className="mt-2 text-xs font-medium text-blue-600 hover:underline"
+                  >
+                    {showAddressSelector ? "Cancel Change" : "Change Address"}
+                  </button>
+
+                  {/* Address selector (hidden until user wants to change) */}
+                  {showAddressSelector && (
+                    <div className="mt-3">
+                      <AddressComponent
+                        onAddressSelect={(addr) =>
+                          setFormData({
+                            ...formData,
+                            pickupAddress: `${addr.address}, ${addr.city}, ${addr.state} - ${addr.pincode}`,
+                          })
+                        }
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Exchange Options */}
