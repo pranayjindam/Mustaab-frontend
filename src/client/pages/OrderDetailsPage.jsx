@@ -121,57 +121,55 @@ const selectedAddress = useSelector((state) => state.address.selectedAddress);
     }
   };
 
-  const handleSubmitRequest = async () => {
-    // Validation
-    if (!formData.selectedItemId) {
-      return alert("Please select a product item");
-    }
+const handleSubmitRequest = async () => {
+  // Validation
+  if (!formData.selectedItemId) {
+    return alert("Please select a product item");
+  }
+  if (!formData.reason) {
+    return alert("Please select a reason");
+  }
+  if (!formData.pickupAddress) {
+    return alert("Please enter pickup address");
+  }
 
-    if (!formData.reason) {
-      return alert("Please select a reason");
-    }
+  const requiresImages =
+    formData.reason === "Defective / Damaged" ||
+    formData.reason === "Wrong Item Delivered";
 
-    if (!formData.pickupAddress) {
-      return alert("Please enter pickup address");
-    }
+  if (requiresImages && formData.images.length === 0) {
+    return alert("Please upload images for the selected reason");
+  }
 
-    // Image validation for specific reasons
-    const requiresImages =
-      formData.reason === "Defective / Damaged" ||
-      formData.reason === "Wrong Item Delivered";
+  try {
+    await createReturnRequest({
+      token,
+      orderId: order._id,                // ✅ correct field
+      productId: formData.selectedItemId, // ✅ must send selected product
+      type: formData.type.toLowerCase(),  // ✅ lowercase enum
+      reason: formData.reason,
+      pickupAddress: formData.pickupAddress,
+      newColor: formData.newColor,
+      newSize: formData.newSize,
+      images: formData.images,
+    }).unwrap();
 
-    if (requiresImages && formData.images.length === 0) {
-      return alert("Please upload images for the selected reason");
-    }
-
-    try {
-     await createReturnRequest({
-       id: order._id,
-       token,
-       type: formData.type,
-       reason: formData.reason,
-       pickupAddress: formData.pickupAddress, // ✅ now filled
-       newColor: formData.newColor,
-       newSize: formData.newSize,
-       images: formData.images,
-     }).unwrap();
-
-      alert("Request submitted successfully!");
-      setShowReturnForm(false);
-      setFormData({
-        selectedItemId: "",
-        type: "Return",
-        reason: "",
-        pickupAddress: "",
-        newColor: "",
-        newSize: "",
-        images: [],
-      });
-    } catch (err) {
-      console.error(err);
-      alert(err?.data?.message || "Failed to submit request");
-    }
-  };
+    alert("Request submitted successfully!");
+    setShowReturnForm(false);
+    setFormData({
+      selectedItemId: "",
+      type: "return",   // default lowercase
+      reason: "",
+      pickupAddress: "",
+      newColor: "",
+      newSize: "",
+      images: [],
+    });
+  } catch (err) {
+    console.error(err);
+    alert(err?.data?.message || "Failed to submit request");
+  }
+};
 
   // Helper to get step icon
   const getStepIcon = (step, idx) => {

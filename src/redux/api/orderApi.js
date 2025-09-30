@@ -109,7 +109,7 @@ createReturnRequest: builder.mutation({
     formData.append("productId", data.productId);
     formData.append("type", data.type);
     formData.append("reason", data.reason);
-
+formData.append("pickupAddress", data.pickupAddress);
     if (data.type === "Exchange") {
       formData.append("newColor", data.newColor || "");
       formData.append("newSize", data.newSize || "");
@@ -120,7 +120,7 @@ createReturnRequest: builder.mutation({
     }
 
     return {
-      url: "/return-requests",
+      url: "/return-requests/",
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`, // token goes in headers
