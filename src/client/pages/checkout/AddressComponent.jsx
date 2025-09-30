@@ -3,15 +3,15 @@ import { useSelector, useDispatch } from "react-redux";
 import { setSelectedAddress } from "../../../redux/slices/addressSlice";
 import {
   useGetAllAddressesQuery,
-  useGetAddressQuery,
   useAddAddressMutation,
-  useDeleteAddressMutation,
   useSetDefaultAddressMutation,
 } from "../../../redux/api/addressApi";
 
-const AddressComponent = () => {
+const AddressComponent = ({ onAddressSelect }) => {
   const dispatch = useDispatch();
-  const selectedAddress = useSelector((state) => state.address?.selectedAddress);
+  const selectedAddress = useSelector(
+    (state) => state.address?.selectedAddress
+  );
 
   const { data, isLoading, isError, refetch } = useGetAllAddressesQuery();
   const addresses = data?.addresses || [];
@@ -32,7 +32,7 @@ const AddressComponent = () => {
     isDefault: false,
   });
   const [selectedListAddress, setSelectedListAddress] = useState(null);
-  const [isDefaultSelected, setIsDefaultSelected] = useState(false); // ✅ checkbox state
+  const [isDefaultSelected, setIsDefaultSelected] = useState(false);
 
   // Initialize selected address
   useEffect(() => {
@@ -43,7 +43,7 @@ const AddressComponent = () => {
     }
   }, [addresses, selectedAddress, dispatch]);
 
-  // Update local checkbox state when selected address changes
+  // Update checkbox state when selected address changes
   useEffect(() => {
     setIsDefaultSelected(selectedListAddress?.isDefault || false);
   }, [selectedListAddress]);
@@ -59,7 +59,8 @@ const AddressComponent = () => {
     e.preventDefault();
     try {
       const res = await addAddress(formData).unwrap();
-      if (formData.isDefault) await setDefaultAddress({ addressId: res._id }).unwrap();
+      if (formData.isDefault)
+        await setDefaultAddress({ addressId: res._id }).unwrap();
       refetch();
       setShowForm(false);
       setFormData({
@@ -82,6 +83,11 @@ const AddressComponent = () => {
     if (selectedListAddress) {
       dispatch(setSelectedAddress(selectedListAddress));
       setShowList(false);
+
+      // 🔑 Send address back to parent
+      if (onAddressSelect) {
+        onAddressSelect(selectedListAddress);
+      }
     }
   };
 
@@ -117,13 +123,12 @@ const AddressComponent = () => {
       {/* Default address */}
       <div className="flex justify-between items-start">
         <div>
-          
           {selectedAddress && (
             <>
               <p className="font-medium">{selectedAddress.fullName}</p>
               <p>
-                {selectedAddress.address}, {selectedAddress.city}, {selectedAddress.state} -{" "}
-                {selectedAddress.pincode}
+                {selectedAddress.address}, {selectedAddress.city},{" "}
+                {selectedAddress.state} - {selectedAddress.pincode}
               </p>
               <p>{selectedAddress.phoneNumber}</p>
             </>
@@ -145,7 +150,9 @@ const AddressComponent = () => {
               key={addr._id}
               onClick={() => setSelectedListAddress(addr)}
               className={`border p-3 rounded cursor-pointer hover:shadow-md ${
-                selectedListAddress?._id === addr._id ? "border-blue-500 bg-blue-50" : ""
+                selectedListAddress?._id === addr._id
+                  ? "border-blue-500 bg-blue-50"
+                  : ""
               }`}
             >
               <div className="flex items-center gap-2">
@@ -168,12 +175,14 @@ const AddressComponent = () => {
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
-                checked={isDefaultSelected} // ✅ use local state
+                checked={isDefaultSelected}
                 onChange={async (e) => {
                   const checked = e.target.checked;
-                  setIsDefaultSelected(checked); // tick appears immediately
+                  setIsDefaultSelected(checked);
                   if (checked && selectedListAddress?._id) {
-                    await setDefaultAddress({ addressId: selectedListAddress._id }).unwrap();
+                    await setDefaultAddress({
+                      addressId: selectedListAddress._id,
+                    }).unwrap();
                     refetch();
                   }
                 }}
@@ -192,18 +201,18 @@ const AddressComponent = () => {
                 onClick={handleDeliver}
                 className="px-4 py-2 bg-blue-600 text-white rounded"
               >
-                Deliver to this address
+                To this address
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Add Address Form Popup with transparent overlay */}
+      {/* Add Address Form Popup */}
       {showForm && (
         <div
           className="fixed inset-0 flex items-center justify-center z-50"
-          style={{ backgroundColor: "rgba(0,0,0,0.3)" }} // semi-transparent overlay
+          style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
         >
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-md relative">
             {/* Close button */}
