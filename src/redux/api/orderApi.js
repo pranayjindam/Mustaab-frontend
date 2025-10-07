@@ -5,7 +5,6 @@ export const orderApi = apiSlice.injectEndpoints({
     // ------------------------
     // Existing Order Endpoints
     // ------------------------
-
     placeOrder: builder.mutation({
       query: ({ token, ...orderData }) => ({
         url: "orders/",
@@ -42,13 +41,39 @@ export const orderApi = apiSlice.injectEndpoints({
       }),
     }),
 
+    // ------------------------
+    // COD OTP Endpoints
+    // ------------------------
+    codRequestOtp: builder.mutation({
+      query: ({ mobile }) => ({
+        url: "/orders/cod/request-otp",
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: { mobile },
+      }),
+    }),
+
+    codVerifyOtp: builder.mutation({
+      query: ({ mobile, otp, orderItems, shippingAddress, totalPrice, token }) => ({
+        url: "/orders/cod/verify-otp",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: { mobile, otp, orderItems, shippingAddress, totalPrice },
+      }),
+      invalidatesTags: ["Orders"],
+    }),
+
+    // ------------------------
+    // Existing queries/mutations
+    // ------------------------
     getUserOrders: builder.query({
       query: ({ token }) => ({
         url: "orders/myorders",
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       }),
     }),
 
@@ -58,6 +83,13 @@ export const orderApi = apiSlice.injectEndpoints({
         headers: { Authorization: `Bearer ${token}` },
       }),
     }),
+getShiprocketStatus: builder.query({
+  query: ({ orderId, token }) => ({
+    url: `orders/${orderId}/track`,
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+  }),
+}),
 
     cancelOrder: builder.mutation({
       query: ({ id, token }) => ({
@@ -89,7 +121,7 @@ export const orderApi = apiSlice.injectEndpoints({
       query: ({ id, status, token }) => ({
         url: `/orders/${id}/status`,
         method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: { status },
       }),
       invalidatesTags: ["Orders"],
@@ -98,49 +130,31 @@ export const orderApi = apiSlice.injectEndpoints({
     // ------------------------
     // Return/Exchange Endpoints
     // ------------------------
-
-    // User: Create return/exchange request
-// redux/api/orderApi.js
-
-createReturnRequest: builder.mutation({
-  query: ({ token, ...data }) => {
-    const formData = new FormData();
-    formData.append("orderId", data.orderId);
-    formData.append("productId", data.productId);
-    formData.append("type", data.type);
-    formData.append("reason", data.reason);
-<<<<<<< HEAD:frontend/src/redux/api/orderApi.js
-formData.append("pickupAddress", data.pickupAddress);
-=======
-
->>>>>>> fa6d54f80ccd60fac7f846dd6d9a5cc6eee4e776:src/redux/api/orderApi.js
-    if (data.type === "Exchange") {
-      formData.append("newColor", data.newColor || "");
-      formData.append("newSize", data.newSize || "");
-    }
-
-    if (data.images && data.images.length > 0) {
-      data.images.forEach((file) => formData.append("images", file));
-    }
-
-    return {
-<<<<<<< HEAD:frontend/src/redux/api/orderApi.js
-      url: "/return-requests/",
-=======
-      url: "/return-requests",
->>>>>>> fa6d54f80ccd60fac7f846dd6d9a5cc6eee4e776:src/redux/api/orderApi.js
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`, // token goes in headers
+    createReturnRequest: builder.mutation({
+      query: ({ token, ...data }) => {
+        const formData = new FormData();
+        formData.append("orderId", data.orderId);
+        formData.append("productId", data.productId);
+        formData.append("type", data.type);
+        formData.append("reason", data.reason);
+        formData.append("pickupAddress", data.pickupAddress);
+        if (data.type === "Exchange") {
+          formData.append("newColor", data.newColor || "");
+          formData.append("newSize", data.newSize || "");
+        }
+        if (data.images && data.images.length > 0) {
+          data.images.forEach((file) => formData.append("images", file));
+        }
+        return {
+          url: "/return-requests/",
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        };
       },
-      body: formData, // send as FormData
-    };
-  },
-  invalidatesTags: ["ReturnRequests"],
-}),
+      invalidatesTags: ["ReturnRequests"],
+    }),
 
-
-    // User: Get my return/exchange requests
     getMyReturnRequests: builder.query({
       query: ({ token }) => ({
         url: "/return-requests/my",
@@ -150,7 +164,6 @@ formData.append("pickupAddress", data.pickupAddress);
       providesTags: ["ReturnRequests"],
     }),
 
-    // Admin: Get all return/exchange requests
     getAllReturnRequests: builder.query({
       query: (token) => ({
         url: "/return-requests",
@@ -160,15 +173,11 @@ formData.append("pickupAddress", data.pickupAddress);
       providesTags: ["ReturnRequests"],
     }),
 
-    // Admin: Update request status
     updateReturnRequestStatus: builder.mutation({
       query: ({ id, status, adminNote, token }) => ({
         url: `/return-requests/${id}/status`,
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: { status, adminNote },
       }),
       invalidatesTags: ["ReturnRequests"],
@@ -187,9 +196,17 @@ export const {
   useGetAllOrdersQuery,
   useUpdateOrderStatusMutation,
 
-  // ✅ New return/exchange hooks
+  // ✅ COD OTP hooks
+  useCodRequestOtpMutation,
+  useCodVerifyOtpMutation,
+
+  // ✅ Return/Exchange hooks
   useCreateReturnRequestMutation,
   useGetMyReturnRequestsQuery,
   useGetAllReturnRequestsQuery,
   useUpdateReturnRequestStatusMutation,
+
+  // ✅ Shiprocket status hook (MISSING)
+  useGetShiprocketStatusQuery,
 } = orderApi;
+
