@@ -19,6 +19,9 @@ export default function DashboardLayout({ children }) {
           <NavLink to="/admin/orders" className={({ isActive }) => (isActive ? activeClass : normalClass)}>
             Orders
           </NavLink>
+          <NavLink to="/admin/returnrequests" className={({ isActive }) => (isActive ? activeClass : normalClass)}>
+            Return/Exchange Requests
+          </NavLink>
           <NavLink to="/admin/categories" className={({ isActive }) => (isActive ? activeClass : normalClass)}>
             Categories
           </NavLink>

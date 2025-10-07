@@ -21,12 +21,13 @@ export default function HomePage() {
   } = useGetAllCategoriesQuery();
   const categories = categoriesData?.categories || [];
 
-  // Fetch recent products
-  const {
-    data: recentProductsData,
-    isLoading: recentProductsLoading,
-  } = useGetRecentQuery();
-  const recentProducts = recentProductsData?.recent || [];
+
+// Only fetch recent if user is logged in
+const { data: recentProductsData, isLoading: recentProductsLoading } = useGetRecentQuery(user, {
+  skip: !user, // ✅ skip if no token
+});
+
+const recentProducts = recentProductsData?.recent || [];
 
   // Fetch all products
   const {

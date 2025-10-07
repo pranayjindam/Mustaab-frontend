@@ -28,6 +28,7 @@ import ShippingDelivery from "./client/pages/ShippingDelivery.jsx";
 import Help from "./client/pages/Help.jsx";
 import OrdersPage from "./admin/pages/OrdersPage.jsx";
 import OrderDetailsPage from "./client/pages/OrderDetailsPage.jsx";
+import ReturnRequestsPage from "./admin/pages/ReturnRequestsPage.jsx";
 
 // ===== Protected Route (Redux) =====
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -151,6 +152,16 @@ export default function App() {
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <DashboardLayout>
               <ProductsPage />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/returnrequests"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <DashboardLayout>
+              <ReturnRequestsPage />
             </DashboardLayout>
           </ProtectedRoute>
         }

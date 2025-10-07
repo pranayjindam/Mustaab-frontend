@@ -25,10 +25,10 @@ const Footer = () => {
           <div>
             <h4 className="text-lg font-semibold mb-4">Connect With Us</h4>
             <div className="flex gap-4">
-              <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer">
+              <a href="https://www.youtube.com/@laxmi_saree_house_sircilla" target="_blank" rel="noopener noreferrer">
                 <FaYoutube className="w-6 h-6 hover:text-red-600" />
               </a>
-              <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer">
+              <a href="https://www.instagram.com/laxmi_saree_house_sircilla/" target="_blank" rel="noopener noreferrer">
                 <FaInstagram className="w-6 h-6 hover:text-pink-600" />
               </a>
               <a href="https://wa.me/919154361299" target="_blank" rel="noopener noreferrer">

@@ -18,7 +18,7 @@ const OrdersPage = () => {
   if (isLoading)
     return <Loader2 className="animate-spin w-8 h-8 text-gray-600" />;
   if (isError) return <p className="text-red-500">❌ Error loading orders.</p>;
-
+console.log("from orders",orders[0]);
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <h2 className="text-2xl font-bold mb-6">My Orders</h2>
