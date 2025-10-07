@@ -109,7 +109,11 @@ createReturnRequest: builder.mutation({
     formData.append("productId", data.productId);
     formData.append("type", data.type);
     formData.append("reason", data.reason);
+<<<<<<< HEAD:frontend/src/redux/api/orderApi.js
 formData.append("pickupAddress", data.pickupAddress);
+=======
+
+>>>>>>> fa6d54f80ccd60fac7f846dd6d9a5cc6eee4e776:src/redux/api/orderApi.js
     if (data.type === "Exchange") {
       formData.append("newColor", data.newColor || "");
       formData.append("newSize", data.newSize || "");
@@ -120,7 +124,11 @@ formData.append("pickupAddress", data.pickupAddress);
     }
 
     return {
+<<<<<<< HEAD:frontend/src/redux/api/orderApi.js
       url: "/return-requests/",
+=======
+      url: "/return-requests",
+>>>>>>> fa6d54f80ccd60fac7f846dd6d9a5cc6eee4e776:src/redux/api/orderApi.js
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`, // token goes in headers
