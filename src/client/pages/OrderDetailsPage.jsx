@@ -9,7 +9,7 @@ import {
 } from "../../redux/api/orderApi";
 import { useSelector } from "react-redux";
 import AddressComponent from "./checkout/AddressComponent";
-
+import ReturnRequests from "../components/ReturnRequests";
 const STATUS_STEPS = [
   "Pending",
   "Processing",
@@ -113,8 +113,9 @@ const selectedAddress = useSelector((state) => state.address.selectedAddress);
 
   const handleCancelOrder = async () => {
     try {
-      await cancelOrder({ id: order._id, token }).unwrap();
-      alert("Cancellation request raised successfully!");
+      console.log("this is order id",order._id);
+      await cancelOrder({ orderId: order?._id,token }).unwrap();
+     
     } catch (err) {
       console.error(err);
       alert(err?.data?.message || "Failed to cancel order");
@@ -171,6 +172,7 @@ const handleSubmitRequest = async () => {
   }
 };
 
+
   // Helper to get step icon
   const getStepIcon = (step, idx) => {
     if (step === "Cancellation Requested" && idx <= animatedStep) {
@@ -225,7 +227,7 @@ const handleSubmitRequest = async () => {
     );
   if (!order)
     return <p className="text-red-500 text-center mt-10">Order not found.</p>;
-
+console.log(order);
   return (
     <div className="p-6 max-w-4xl mx-auto bg-gray-100 min-h-screen flex flex-col gap-6">
       <h2 className="text-2xl font-bold mb-4">Order Details</h2>
@@ -295,6 +297,7 @@ const handleSubmitRequest = async () => {
         </div>
 
         {/* Order Status Tracker */}
+        {order.status!=="Cancelled"?(
         <div ref={trackerRef} className="pt-6 border-t">
           <h3 className="font-semibold text-sm md:text-base mb-4">
             Order Status
@@ -339,314 +342,12 @@ const handleSubmitRequest = async () => {
               </div>
             ))}
           </div>
-        </div>
+        </div>):(<h1 style={{color:"red", fontSize:"30px", textAlign:"center"}}>Cancelled</h1>)
+        }
 
-        {/* Cancel & Return/Exchange */}
-        <div className="pt-6 border-t flex flex-col gap-3">
-          {/* Cancel Order - Only show if not delivered/cancelled/returned */}
-          {shouldShowCancelButton() && (
-            <button
-              onClick={handleCancelOrder}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600"
-            >
-              Cancel Order
-            </button>
-          )}
-
-          {/* Show status if cancellation requested */}
-          {order.cancellationStatus === "Requested" && (
-            <div className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-lg text-sm font-medium">
-              ⏳ Cancellation request pending admin approval
-            </div>
-          )}
-
-          {/* Show cancelled status */}
-          {order.status === "Cancelled" && (
-            <div className="px-4 py-2 bg-red-100 text-red-800 rounded-lg text-sm font-medium">
-              ✗ Order Cancelled
-            </div>
-          )}
-
-          {/* Return / Exchange - Only show if Delivered */}
-          {order.status === "Delivered" &&
-            (!showReturnForm ? (
-              <button
-                onClick={() => {
-                  // Auto-select first product when opening form
-                  setFormData({
-                    ...formData,
-                    selectedItemId: order.orderItems[0]?._id || "",
-                  });
-                  setShowReturnForm(true);
-                }}
-                className="px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-medium hover:bg-yellow-600"
-              >
-                Return / Exchange
-              </button>
-            ) : (
-              <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-sm md:text-base">
-                    Return / Exchange Request
-                  </h3>
-                  <button
-                    onClick={() => {
-                      setShowReturnForm(false);
-                      setFormData({
-                        selectedItemId: "",
-                        type: "Return",
-                        reason: "",
-                        pickupAddress: "",
-                        newColor: "",
-                        newSize: "",
-                        images: [],
-                      });
-                    }}
-                    className="text-gray-500 hover:text-gray-700 text-sm"
-                  >
-                    ✕ Close
-                  </button>
-                </div>
-
-                {/* Selected Product Display */}
-                {formData.selectedItemId && (
-                  <div className="bg-white p-3 rounded-lg border">
-                    {(() => {
-                      const selectedItem = order.orderItems.find(
-                        (item) => item._id === formData.selectedItemId
-                      );
-                      return selectedItem ? (
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={selectedItem.image}
-                            alt={selectedItem.name}
-                            className="w-16 h-16 object-cover rounded"
-                          />
-                          <div className="flex-1">
-                            <p className="font-semibold text-sm">
-                              {selectedItem.name}
-                            </p>
-                            <div className="flex gap-3 text-xs text-gray-600">
-                              {selectedItem.size && (
-                                <span>Size: {selectedItem.size}</span>
-                              )}
-                              {selectedItem.color && (
-                                <span>Color: {selectedItem.color}</span>
-                              )}
-                              <span>Qty: {selectedItem.quantity}</span>
-                            </div>
-                          </div>
-                          <p className="font-semibold text-sm">
-                            ₹{selectedItem.price}
-                          </p>
-                        </div>
-                      ) : null;
-                    })()}
-                  </div>
-                )}
-
-                {/* Product Selector - Only show if multiple items */}
-                {order.orderItems.length > 1 && (
-                  <div>
-                    <label className="text-xs font-medium text-gray-700">
-                      Select Different Product (Optional)
-                    </label>
-                    <select
-                      className="w-full mt-1 p-2 border rounded text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                      value={formData.selectedItemId}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          selectedItemId: e.target.value,
-                        })
-                      }
-                    >
-                      {order.orderItems.map((item) => (
-                        <option key={item._id} value={item._id}>
-                          {item.name} ({item.size || "N/A"},{" "}
-                          {item.color || "N/A"})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {/* Type */}
-                <div>
-                  <label className="text-xs font-medium text-gray-700">
-                    Request Type <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex gap-3 mt-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setFormData({ ...formData, type: "Return" })
-                      }
-                      className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                        formData.type === "Return"
-                          ? "bg-yellow-500 text-white"
-                          : "bg-white border border-gray-300 text-gray-700 hover:border-yellow-500"
-                      }`}
-                    >
-                      Return
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setFormData({ ...formData, type: "Exchange" })
-                      }
-                      className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                        formData.type === "Exchange"
-                          ? "bg-yellow-500 text-white"
-                          : "bg-white border border-gray-300 text-gray-700 hover:border-yellow-500"
-                      }`}
-                    >
-                      Exchange
-                    </button>
-                  </div>
-                </div>
-
-                {/* Reason */}
-                <div>
-                  <label className="text-xs font-medium text-gray-700">
-                    Reason <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    className="w-full mt-1 p-2 border rounded text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                    value={formData.reason}
-                    onChange={(e) =>
-                      setFormData({ ...formData, reason: e.target.value })
-                    }
-                  >
-                    <option value="">Select a reason</option>
-                    <option value="Defective / Damaged">
-                      Defective / Damaged
-                    </option>
-                    <option value="Wrong Item Delivered">
-                      Wrong Item Delivered
-                    </option>
-                    <option value="Not as Expected">Not as Expected</option>
-                    <option value="Size / Fit Issue">Size / Fit Issue</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-
-                {/* Image Upload - Only for Defective/Damaged or Wrong Item */}
-                {(formData.reason === "Defective / Damaged" ||
-                  formData.reason === "Wrong Item Delivered") && (
-                  <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                    <label className="text-xs font-medium text-gray-700 flex items-center gap-1">
-                      Upload Product Images{" "}
-                      <span className="text-red-500">*</span>
-                      <span className="text-xs text-gray-500 font-normal">
-                        (Required for this reason)
-                      </span>
-                    </label>
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      className="mt-2 text-sm w-full"
-                      onChange={handleFileChange}
-                    />
-                    {formData.images.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        <p className="text-xs text-green-600 font-medium">
-                          ✓ {formData.images.length} file(s) selected
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {Array.from(formData.images).map((file, idx) => (
-                            <span
-                              key={idx}
-                              className="text-xs bg-white px-2 py-1 rounded border"
-                            >
-                              {file.name}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Pickup Address Component */}
-                <div>
-                  <label className="text-xs font-medium text-gray-700 mb-1 block">
-                    Pickup Address <span className="text-red-500">*</span>
-                  </label>
-                  <AddressComponent
-                    onAddressSelect={(addr) =>
-                      setFormData({
-                        ...formData,
-                        pickupAddress: `${addr.address}, ${addr.city}, ${addr.state} - ${addr.pincode}`,
-                      })
-                    }
-                  />
-                </div>
-
-                {/* Exchange Options */}
-                {formData.type === "Exchange" && (
-                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                    <p className="text-xs font-medium text-blue-900 mb-3">
-                      Specify your exchange preferences:
-                    </p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-xs font-medium text-gray-700">
-                          New Size
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="e.g. L, XL"
-                          className="w-full mt-1 p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          value={formData.newSize}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              newSize: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-gray-700">
-                          New Color
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Red, Blue"
-                          className="w-full mt-1 p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          value={formData.newColor}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              newColor: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Submit Button */}
-                <button
-                  className="w-full px-4 py-3 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  onClick={handleSubmitRequest}
-                  disabled={loadingSubmit}
-                >
-                  {loadingSubmit ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Submitting Request...
-                    </span>
-                  ) : (
-                    "Submit Request"
-                  )}
-                </button>
-              </div>
-            ))}
-        </div>
+        
+{/* Return/Exchange Section */}
+<ReturnRequests orderId={order._id} order={order} />
       </div>
     </div>
   );
