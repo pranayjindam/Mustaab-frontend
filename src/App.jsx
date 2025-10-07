@@ -29,6 +29,7 @@ import Help from "./client/pages/Help.jsx";
 import OrdersPage from "./admin/pages/OrdersPage.jsx";
 import OrderDetailsPage from "./client/pages/OrderDetailsPage.jsx";
 import ReturnRequestsPage from "./admin/pages/ReturnRequestsPage.jsx";
+import Store from "./client/pages/StorePage.jsx";
 
 // ===== Protected Route (Redux) =====
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -56,7 +57,6 @@ export default function App() {
   return (
     <Routes>
       {/* ===== Public client routes ===== */}
-     
       <Route
         path="/signin"
         element={
@@ -74,57 +74,60 @@ export default function App() {
         }
       />
       <Route path="/product/:id" element={<ProductDetailsPage />} />
-      <Route path="/search/:keyword" element={<SearchPage/>}/>     
-       <Route path="/privacy-policy" element={<PrivacyPolicyPage/>}/>
-       <Route path="/terms-service" element={<TermsOfService/>}/>
-       <Route path="/shipping-delivery" element={<ShippingDelivery/>}/>
-        <Route path="/" element={<HomePage/>} />
-       <Route path="/help" element={<Help/>}/> 
-     
-       <Route path="/returns" element={<Returns/>}/>
+      <Route path="/store" element={<Store />} /> {/* ✅ add this line */}
+      <Route path="/search/:keyword" element={<SearchPage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms-service" element={<TermsOfService />} />
+      <Route path="/shipping-delivery" element={<ShippingDelivery />} />
+      <Route path="/" element={<HomePage />} />
+      <Route path="/help" element={<Help />} />
+      <Route path="/returns" element={<Returns />} />
       {/* ===== Customer protected routes ===== */}
       <Route
         path="/cart"
         element={
-          <ProtectedRoute allowedRoles={["USER","ADMIN"]}>
-            <Cart/>
+          <ProtectedRoute allowedRoles={["USER", "ADMIN"]}>
+            <Cart />
           </ProtectedRoute>
         }
       />
       <Route
         path="/wishlist"
         element={
-          <ProtectedRoute allowedRoles={["USER","ADMIN"]}>
-            <WishlistPage/>
+          <ProtectedRoute allowedRoles={["USER", "ADMIN"]}>
+            <WishlistPage />
           </ProtectedRoute>
         }
       />
       <Route
-      path="/orders/success/:orderId"
-      element={
-        <ProtectedRoute allowedRoles={["USER","ADMIN"]}>
-        <OrderSuccess/>
-        </ProtectedRoute>
-      }/>
+        path="/orders/success/:orderId"
+        element={
+          <ProtectedRoute allowedRoles={["USER", "ADMIN"]}>
+            <OrderSuccess />
+          </ProtectedRoute>
+        }
+      />
       <Route
-      path="/orders"
-      element={
-        <ProtectedRoute allowedRoles={["USER","ADMIN"]}>
-        <MyOrders/>
-        </ProtectedRoute>
-      }/>
+        path="/orders"
+        element={
+          <ProtectedRoute allowedRoles={["USER", "ADMIN"]}>
+            <MyOrders />
+          </ProtectedRoute>
+        }
+      />
       <Route
-      path="/orders/:id"
-      element={
-        <ProtectedRoute allowedRoles={["USER","ADMIN"]}>
-        <OrderDetailsPage/>
-        </ProtectedRoute>
-      }/>
+        path="/orders/:id"
+        element={
+          <ProtectedRoute allowedRoles={["USER", "ADMIN"]}>
+            <OrderDetailsPage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/checkout"
         element={
-          <ProtectedRoute allowedRoles={["USER","ADMIN"]}>
-            <Checkout/>
+          <ProtectedRoute allowedRoles={["USER", "ADMIN"]}>
+            <Checkout />
           </ProtectedRoute>
         }
       />
@@ -144,7 +147,6 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-
       {/* ===== Admin routes with DashboardLayout ===== */}
       <Route
         path="/admin/products"
@@ -176,12 +178,11 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      
       <Route
         path="/admin/dashboard"
         element={
           <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <DashboardLayout/>
+            <DashboardLayout />
           </ProtectedRoute>
         }
       />
@@ -225,7 +226,6 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-
       {/* ===== Fallback ===== */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
