@@ -181,7 +181,7 @@ export default function CarouselPage() {
       </div>
 
       {/* Animations */}
-      <style jsx>{`
+      <style >{`
         @keyframes fade-in {
           from {
             opacity: 0;

@@ -10,7 +10,7 @@ export default function ReviewPage() {
   const [deleteReview] = useDeleteReviewMutation();
 
   const reviews = data?.reviews || [];
-
+  console.log("All Reviews:", reviews);
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this review?")) {
       await deleteReview(id);
