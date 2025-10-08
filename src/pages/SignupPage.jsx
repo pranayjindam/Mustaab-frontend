@@ -28,15 +28,19 @@ export default function RegisterPage() {
   const handleRequestOtp = async (e) => {
     e.preventDefault();
     const { name, mobile, email } = formData;
-    if (!name || !mobile) return alert("Name and Mobile are required");
+
+    if (!name) return alert("Name is required for registration");
+    if (!mobile) return alert("Mobile is required");
 
     try {
       const res = await requestOtp({ name, mobile, email }).unwrap();
-      if (res.success) {
-        alert("OTP sent successfully!");
+      console.log(res);
+      if (res.mobileOtp) {
+        alert("✅ OTP sent! Please verify to complete registration.");
         setStep(2);
       } else {
-        alert(res.message || "Failed to send OTP");
+        // Backend will send this if user exists
+        alert(res.message || "Cannot send OTP");
       }
     } catch (err) {
       alert(err?.data?.message || "Error sending OTP");

@@ -10,7 +10,8 @@ import Footer from "../components/Footer.jsx";
 import { Zoom, ToastContainer, toast } from "react-toastify";
 import Navbar from "../components/Navbar.jsx";
 import ProductCard from "../components/ProductCard.jsx";
-
+import { useGetAllReviewsQuery } from "../../redux/api/reviewsApi.js";
+import ReviewCard from "../components/ReviewCard.jsx";
 export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -30,7 +31,9 @@ export default function ProductDetails() {
   const [selectedSize, setSelectedSize] = useState("M");
   const [sort, setSort] = useState("");
   const scrollRef = useRef(null);
-
+const { data: reviewData, isLoading: reviewsLoading } = useGetAllReviewsQuery(id);
+const reviews = Array.isArray(reviewData?.reviews) ? reviewData?.reviews : [];
+console.log(reviews);
   // Reset selections when product changes
   useEffect(() => {
     if (product) {
@@ -260,6 +263,23 @@ export default function ProductDetails() {
             </div>
           </div>
         </div>
+{/* Reviews Section */}
+<section className="mt-16">
+  <h2 className="text-3xl font-bold mb-4">Customer Reviews</h2>
+
+  {reviewsLoading ? (
+    <p>Loading reviews...</p>
+  ) : reviews.length === 0 ? (
+    <p className="text-gray-500">No reviews yet. Be the first to review!</p>
+  ) : (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {reviews.map((rev) => (
+        <ReviewCard key={rev._id} review={rev} />
+      ))}
+    </div>
+  )}
+</section>
+
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (

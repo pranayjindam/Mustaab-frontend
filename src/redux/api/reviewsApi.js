@@ -2,8 +2,20 @@ import { apiSlice } from "./apiSlice";
 
 export const reviewApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
+    createReview: builder.mutation({
+  query: ({ token, ...data }) => ({
+    url: "/review/create",
+    method: "POST",
+    body: data,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  }),
+  invalidatesTags: ["Review"],
+}),
     getAllReviews: builder.query({
-      query: () => "/review",
+      query: (id) => `/review/${id}`,
       providesTags: ["Review"],
     }),
     getReviewById: builder.query({
@@ -33,4 +45,5 @@ export const {
   useGetReviewByIdQuery,
   useUpdateReviewMutation,
   useDeleteReviewMutation,
+  useCreateReviewMutation
 } = reviewApi;
