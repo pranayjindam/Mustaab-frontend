@@ -5,6 +5,7 @@ import {
   useGetAllAddressesQuery,
   useAddAddressMutation,
   useSetDefaultAddressMutation,
+  useUpdateAddressMutation,
 } from "../../../redux/api/addressApi";
 
 const AddressComponent = ({ onAddressSelect }) => {
@@ -16,12 +17,15 @@ const AddressComponent = ({ onAddressSelect }) => {
   const { data, isLoading, isError, refetch } = useGetAllAddressesQuery();
   const addresses = data?.addresses || [];
 
-
   const [addAddress] = useAddAddressMutation();
   const [setDefaultAddress] = useSetDefaultAddressMutation();
+  const [updateAddress] = useUpdateAddressMutation();
 
   const [showList, setShowList] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState(null);
+
   const [formData, setFormData] = useState({
     fullName: "",
     phoneNumber: "",
@@ -32,38 +36,47 @@ const AddressComponent = ({ onAddressSelect }) => {
     address: "",
     isDefault: false,
   });
+
   const [selectedListAddress, setSelectedListAddress] = useState(null);
   const [isDefaultSelected, setIsDefaultSelected] = useState(false);
 
-  // Initialize selected address
   useEffect(() => {
-    if (addresses.length > 0 && !selectedAddress) {
-      const defaultAddr = addresses.find((a) => a.isDefault) || addresses[0];
-      dispatch(setSelectedAddress(defaultAddr));
-      setSelectedListAddress(defaultAddr);
+    if (addresses.length > 0) {
+      const currentSelected = addresses.find(
+        (a) => a._id === selectedAddress?._id
+      );
+      if (currentSelected) {
+        setSelectedListAddress(currentSelected);
+      } else {
+        const defaultAddr = addresses.find((a) => a.isDefault) || addresses[0];
+        dispatch(setSelectedAddress(defaultAddr));
+        setSelectedListAddress(defaultAddr);
+      }
     }
   }, [addresses, selectedAddress, dispatch]);
 
-  // Update checkbox state when selected address changes
   useEffect(() => {
     setIsDefaultSelected(selectedListAddress?.isDefault || false);
   }, [selectedListAddress]);
 
-  // Handle form input
   const handleFormChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({ ...formData, [name]: type === "checkbox" ? checked : value });
   };
 
-  // Add new address
-  const handleAddAddress = async (e) => {
+  const handleSaveAddress = async (e) => {
     e.preventDefault();
     try {
-      const res = await addAddress(formData).unwrap();
-      if (formData.isDefault)
-        await setDefaultAddress({ addressId: res._id }).unwrap();
+      if (isEditing && editingAddressId) {
+        await updateAddress({ id: editingAddressId, data: formData }).unwrap();
+      } else {
+        const res = await addAddress(formData).unwrap();
+        if (formData.isDefault)
+          await setDefaultAddress({ addressId: res._id }).unwrap();
+      }
       refetch();
       setShowForm(false);
+      setIsEditing(false);
       setFormData({
         fullName: "",
         phoneNumber: "",
@@ -79,20 +92,21 @@ const AddressComponent = ({ onAddressSelect }) => {
     }
   };
 
-  // Deliver to this address
+  const handleEditAddress = (addr) => {
+    setFormData({ ...addr });
+    setEditingAddressId(addr._id);
+    setIsEditing(true);
+    setShowForm(true);
+  };
+
   const handleDeliver = () => {
     if (selectedListAddress) {
       dispatch(setSelectedAddress(selectedListAddress));
       setShowList(false);
-
-      // 🔑 Send address back to parent
-      if (onAddressSelect) {
-        onAddressSelect(selectedListAddress);
-      }
+      if (onAddressSelect) onAddressSelect(selectedListAddress);
     }
   };
 
-  // Autofill using geolocation
   const handleUseCurrentLocation = () => {
     if (!navigator.geolocation) return alert("Geolocation not supported");
     navigator.geolocation.getCurrentPosition(async (position) => {
@@ -116,66 +130,101 @@ const AddressComponent = ({ onAddressSelect }) => {
     });
   };
 
-  if (isLoading) return <p>Loading addresses...</p>;
-  if (isError) return <p>Error loading addresses</p>;
+  if (isLoading) return <p className="text-slate-500">Loading addresses...</p>;
+  if (isError) return <p className="text-red-500">Error loading addresses</p>;
 
   return (
-    <div className="w-full max-w-xl mx-auto mt-4 border p-4 rounded shadow flex flex-col gap-4">
-      {/* Default address */}
-      <div className="flex justify-between items-start">
-        <div>
-          {selectedAddress && (
-            <>
-              <p className="font-medium">{selectedAddress.fullName}</p>
-              <p>
-                {selectedAddress.address}, {selectedAddress.city},{" "}
-                {selectedAddress.state} - {selectedAddress.pincode}
-              </p>
-              <p>{selectedAddress.phoneNumber}</p>
-            </>
-          )}
+    <div className="w-full text-slate-800 relative">
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(15px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes zoomIn {
+          from { transform: scale(0.95); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+        .fadeIn { animation: fadeInUp 0.5s ease forwards; }
+        .zoomIn { animation: zoomIn 0.3s ease-out forwards; }
+      `}</style>
+
+      {/* Selected Address Display */}
+      <div className="fadeIn">
+        <div className="flex justify-between items-start">
+          <div>
+            {selectedAddress ? (
+              <>
+                <p className="text-lg font-semibold text-slate-800">
+                  {selectedAddress.fullName}
+                </p>
+                <p className="text-slate-600">
+                  {selectedAddress.address}, {selectedAddress.city},{" "}
+                  {selectedAddress.state} - {selectedAddress.pincode}
+                </p>
+                <p className="text-slate-500 mt-1">
+                  {selectedAddress.phoneNumber}
+                </p>
+              </>
+            ) : (
+              <p className="text-slate-500 italic">No address selected</p>
+            )}
+          </div>
+          <button
+            onClick={() => setShowList(!showList)}
+            className="font-semibold text-teal-600 hover:text-teal-700 underline transition-all flex-shrink-0 ml-4"
+          >
+            Change
+          </button>
         </div>
-        <button
-          onClick={() => setShowList(!showList)}
-          className="text-blue-600 underline mt-1"
-        >
-          Change Address
-        </button>
       </div>
 
-      {/* Address list */}
+      {/* Address List */}
       {showList && (
-        <div className="border-t pt-4 flex flex-col gap-3 max-h-96 overflow-y-auto">
+        <div className="fadeIn mt-5 border-t border-slate-200 pt-4 max-h-96 overflow-y-auto space-y-3">
           {addresses.map((addr) => (
             <div
               key={addr._id}
               onClick={() => setSelectedListAddress(addr)}
-              className={`border p-3 rounded cursor-pointer hover:shadow-md ${
+              className={`p-4 rounded-2xl transition-all duration-200 border cursor-pointer ${
                 selectedListAddress?._id === addr._id
-                  ? "border-blue-500 bg-blue-50"
-                  : ""
+                  ? "border-teal-500 bg-teal-500/10 ring-2 ring-teal-500/50"
+                  : "border-slate-200 hover:border-teal-400 hover:bg-teal-50"
               }`}
             >
-              <div className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  checked={selectedListAddress?._id === addr._id}
-                  onChange={() => setSelectedListAddress(addr)}
-                />
-                <span className="font-medium">{addr.fullName}</span>
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="font-semibold text-slate-800">
+                    {addr.fullName}
+                    {addr.isDefault && (
+                      <span className="ml-2 text-xs px-2 py-0.5 bg-teal-100 text-teal-800 font-medium rounded-lg">
+                        Default
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-slate-600 text-sm">
+                    {addr.address}, {addr.city}, {addr.state} - {addr.pincode}
+                  </p>
+                  <p className="text-slate-500 text-sm">{addr.phoneNumber}</p>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditAddress(addr);
+                  }}
+                  className="text-slate-500 hover:text-teal-600 text-sm underline flex-shrink-0 ml-2"
+                >
+                  Edit
+                </button>
               </div>
-              <p className="text-gray-700 mt-1">
-                {addr.address}, {addr.city}, {addr.state} - {addr.pincode}
-              </p>
-              <p className="text-gray-500">{addr.phoneNumber}</p>
             </div>
           ))}
 
-          {/* Set default & actions */}
-          <div className="flex justify-between items-center mt-2">
-            <label className="flex items-center gap-2">
+          {/* Set Default + Buttons */}
+          <div className="flex justify-between items-center mt-4">
+            <label className="flex items-center gap-2 text-slate-600">
               <input
                 type="checkbox"
+                className="rounded text-teal-600 focus:ring-teal-500"
                 checked={isDefaultSelected}
                 onChange={async (e) => {
                   const checked = e.target.checked;
@@ -188,116 +237,99 @@ const AddressComponent = ({ onAddressSelect }) => {
                   }
                 }}
               />
-              <span>Set as default address</span>
+              <span>Set as default</span>
             </label>
-
-            <div className="flex items-center gap-2">
+            <div className="flex gap-3">
               <button
-                onClick={() => setShowForm(true)}
-                className="text-blue-600 underline flex items-center gap-1"
+                onClick={() => {
+                  setIsEditing(false);
+                  setFormData({
+                    fullName: "",
+                    phoneNumber: "",
+                    pincode: "",
+                    country: "India",
+                    state: "",
+                    city: "",
+                    address: "",
+                    isDefault: false,
+                  });
+                  setShowForm(true);
+                }}
+                className="px-4 py-2 rounded-xl bg-white border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition-colors"
               >
-                + Add Address
+                + Add
               </button>
               <button
                 onClick={handleDeliver}
-                className="px-4 py-2 bg-blue-600 text-white rounded"
+                className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold shadow-lg shadow-teal-500/20 transition-colors"
               >
-                To this address
+                Deliver Here
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Add Address Form Popup */}
+      {/* Add/Edit Address Modal */}
       {showForm && (
-        <div
-          className="fixed inset-0 flex items-center justify-center z-50"
-          style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
-        >
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-md relative">
-            {/* Close button */}
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 fadeIn">
+          <div className="bg-white text-slate-900 p-6 rounded-3xl shadow-2xl w-full max-w-md relative zoomIn border border-slate-200">
             <button
               onClick={() => setShowForm(false)}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 font-bold text-lg"
+              className="absolute top-3 right-4 text-slate-400 hover:text-slate-600 text-2xl font-bold"
             >
-              ×
+              &times;
             </button>
-
-            <h3 className="font-semibold text-lg mb-4">Add New Address</h3>
+            <h3 className="text-xl font-bold mb-4">
+              {isEditing ? "Edit Address" : "Add New Address"}
+            </h3>
 
             <button
               type="button"
               onClick={handleUseCurrentLocation}
-              className="mb-2 px-2 py-1 text-sm text-blue-600 underline"
+              className="mb-3 text-teal-600 hover:text-teal-700 underline text-sm font-semibold"
             >
               Use Current Location
             </button>
 
-            <form className="flex flex-col gap-2" onSubmit={handleAddAddress}>
-              <input
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleFormChange}
-                placeholder="Full Name"
-                required
-                className="border p-2 rounded w-full"
-              />
-              <input
-                name="phoneNumber"
-                value={formData.phoneNumber}
-                onChange={handleFormChange}
-                placeholder="Phone Number"
-                required
-                className="border p-2 rounded w-full"
-              />
-              <input
-                name="pincode"
-                value={formData.pincode}
-                onChange={handleFormChange}
-                placeholder="Pincode"
-                required
-                className="border p-2 rounded w-full"
-              />
-              <input
-                name="state"
-                value={formData.state}
-                onChange={handleFormChange}
-                placeholder="State"
-                required
-                className="border p-2 rounded w-full"
-              />
-              <input
-                name="city"
-                value={formData.city}
-                onChange={handleFormChange}
-                placeholder="City"
-                required
-                className="border p-2 rounded w-full"
-              />
-              <input
-                name="address"
-                value={formData.address}
-                onChange={handleFormChange}
-                placeholder="Address"
-                required
-                className="border p-2 rounded w-full"
-              />
-              <label className="flex items-center gap-2 mt-2">
+            <form onSubmit={handleSaveAddress} className="flex flex-col gap-3">
+              {[
+                "fullName",
+                "phoneNumber",
+                "pincode",
+                "state",
+                "city",
+                "address",
+              ].map((field) => (
+                <input
+                  key={field}
+                  name={field}
+                  value={formData[field]}
+                  onChange={handleFormChange}
+                  placeholder={field
+                    .replace(/([A-Z])/g, " $1")
+                    .replace(/^./, (str) => str.toUpperCase())}
+                  required
+                  className="p-3 rounded-xl bg-slate-100 border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/40 transition-all outline-none"
+                />
+              ))}
+
+              <label className="flex items-center gap-2 mt-2 text-slate-600">
                 <input
                   type="checkbox"
                   name="isDefault"
+                  className="rounded text-teal-600 focus:ring-teal-500"
                   checked={formData.isDefault}
                   onChange={handleFormChange}
                 />
-                <span>Set as default address</span>
+                <span>Set as default delivery address</span>
               </label>
 
               <button
                 type="submit"
-                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
+                className="mt-4 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 font-semibold text-white transition-all shadow-lg shadow-teal-500/20"
               >
-                Save Address
+                {isEditing ? "Update Address" : "Save Address"}
               </button>
             </form>
           </div>
