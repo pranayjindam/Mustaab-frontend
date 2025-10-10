@@ -30,6 +30,8 @@ import OrdersPage from "./admin/pages/OrdersPage.jsx";
 import OrderDetailsPage from "./client/pages/OrderDetailsPage.jsx";
 import ReturnRequestsPage from "./admin/pages/ReturnRequestsPage.jsx";
 import Store from "./client/pages/StorePage.jsx";
+import BarcodeScanner from "./admin/pages/BarCodeScanner.jsx";
+import BarcodeCameraScanner from "./admin/pages/BarCodeCameraScanner.jsx";
 
 // ===== Protected Route (Redux) =====
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -154,6 +156,26 @@ export default function App() {
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <DashboardLayout>
               <ProductsPage />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/products/scan"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <DashboardLayout>
+              <BarcodeScanner />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/products/camscan"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <DashboardLayout>
+              <BarcodeCameraScanner/>
             </DashboardLayout>
           </ProtectedRoute>
         }
