@@ -1,35 +1,56 @@
-import React, { useState } from "react";
+import React, { useRef, useEffect, useState } from "react";
+import { BrowserMultiFormatReader, BarcodeFormat } from "@zxing/library";
 import { useNavigate } from "react-router-dom";
-import BarcodeScannerComponent from "react-qr-barcode-scanner";
 
 const BarcodeCameraScanner = () => {
-  const [data, setData] = useState("No result");
+  const videoRef = useRef(null);
+  const [barcodeText, setBarcodeText] = useState("");
   const navigate = useNavigate();
 
-  return (
-    <div className="flex flex-col items-center p-6">
-      <h2 className="text-xl font-semibold mb-4">📷 Scan Product Barcode</h2>
+  useEffect(() => {
+    const codeReader = new BrowserMultiFormatReader();
+    const selectedFormats = [BarcodeFormat.CODE_128]; // only CODE128 for MongoDB _id
+    let lastResult = null;
 
-      <div className="w-[300px] h-[250px] border-2 border-gray-400 rounded-lg overflow-hidden">
-        <BarcodeScannerComponent
-          width={300}
-          height={250}
-          onUpdate={(err, result) => {
-            if (result) {
-              const scannedId = result.text.trim();
-              // MongoDB ObjectId is 24 characters long
-              if (scannedId.length === 24) {
-                setData(scannedId);
-                navigate(`/admin/products/${scannedId}`);
+    codeReader
+      .listVideoInputDevices()
+      .then((videoInputDevices) => {
+        if (!videoInputDevices.length) return console.error("No cameras found");
+        const selectedDeviceId = videoInputDevices[0].deviceId;
+
+        codeReader.decodeFromVideoDevice(
+          selectedDeviceId,
+          videoRef.current,
+          (resultObj, error) => {
+            if (resultObj) {
+              const text = resultObj.getText();
+
+              if (selectedFormats.includes(resultObj.getBarcodeFormat()) && text !== lastResult) {
+                lastResult = text;
+                setBarcodeText(text); // set the detected MongoDB _id
+                console.log("Barcode detected:", text);
               }
             }
-          }}
-        />
-      </div>
+          }
+        );
+      })
+      .catch(console.error);
 
-      <p className="mt-4 text-gray-700">
-        {data === "No result" ? "Align product barcode inside the frame" : `Detected ID: ${data}`}
-      </p>
+    return () => codeReader.reset();
+  }, []);
+
+  // Navigate to product page when a MongoDB _id is detected
+  useEffect(() => {
+    if (barcodeText.length === 24) { // MongoDB ObjectId length
+      navigate(`/admin/products/${barcodeText}`);
+    }
+  }, [barcodeText, navigate]);
+
+  return (
+    <div style={{ textAlign: "center" }}>
+      <h2>Scan Barcode</h2>
+      <video ref={videoRef} style={{ width: 300, height: 300 }} />
+      <p>Result: {barcodeText || "No barcode detected"}</p>
     </div>
   );
 };
