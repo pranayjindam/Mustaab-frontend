@@ -23,6 +23,7 @@
     "@reduxjs/toolkit": "^2.8.2",
     "@tailwindcss/postcss": "^4.0.3",
     "@tailwindcss/vite": "^4.0.3",
+    "@zxing/library": "^0.21.3",
     "apexcharts": "^5.3.5",
     "axios": "^1.7.9",
     "babel-preset-react-app": "^10.0.1",
