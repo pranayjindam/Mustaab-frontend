@@ -2,7 +2,7 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import WishlistPage from "./client/pages/WishlistPage.jsx"; 
-
+import { useState,useEffect } from "react";
 // ===== Client Pages =====
 import HomePage from "./client/pages/HomePage.jsx";
 import Login from "./pages/LoginPage.jsx";
@@ -12,6 +12,7 @@ import Cart from "./client/pages/CartPage.jsx";
 import Checkout from "./client/pages/checkout/Checkout.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import SearchPage from "./client/pages/SearchPage.jsx";
+import InitialLoader from "./client/components/InitialLoader.jsx";
 // ===== Admin Pages =====
 import DashboardLayout from "./admin/pages/Dashboard.jsx";
 import CategoriesPage from "./admin/pages/CategoriesPage.jsx";
@@ -56,7 +57,21 @@ const RedirectIfLoggedIn = ({ children }) => {
 };
 
 export default function App() {
+   const [showLoader, setShowLoader] = useState(false);
+  useEffect(() => {
+    // Check if loader has already been shown in this session
+    const hasVisited = sessionStorage.getItem("hasVisited");
+
+    if (!hasVisited) {
+      setShowLoader(true);
+      sessionStorage.setItem("hasVisited", "true");
+    }
+  }, []);
   return (
+    <>
+     {showLoader ? (
+        <InitialLoader onFinish={() => setShowLoader(false)} />
+      ) : (
     <Routes>
       {/* ===== Public client routes ===== */}
       <Route
@@ -250,6 +265,8 @@ export default function App() {
       />
       {/* ===== Fallback ===== */}
       <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+  </Routes>
+      )}
+    </>
   );
 }

@@ -1,23 +1,15 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../redux/slices/authSlice";
 import { persistor } from "../../redux/store/store";
 import {
-  Dialog,
-  DialogBackdrop,
-  DialogPanel,
   Popover,
   PopoverButton,
   PopoverGroup,
   PopoverPanel,
-  Tab,
-  TabGroup,
-  TabList,
-  TabPanel,
-  TabPanels,
 } from "@headlessui/react";
 import {
   Bars3Icon,
@@ -28,16 +20,36 @@ import {
 } from "@heroicons/react/24/outline";
 import { FaUser } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
+import { useGetSearchSuggestionsQuery } from "../../redux/api/productApi";
+
+// Custom hook for debouncing
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 export default function Navbar() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const searchRef = useRef(null);
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const { user } = useSelector((state) => state.auth);
   const cartLength = useSelector(
@@ -47,6 +59,36 @@ export default function Navbar() {
         0
       ) || 0
   );
+
+  // Debounce search term (300ms delay)
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Determine if we should skip the API call
+  const shouldSkip = !debouncedSearchTerm || debouncedSearchTerm.trim().length < 2;
+
+  // Fetch search suggestions with RTK Query
+  const { data: suggestionsData, isFetching, error } = useGetSearchSuggestionsQuery(
+    debouncedSearchTerm,
+    {
+      skip: shouldSkip,
+    }
+  );
+
+  // Extract suggestions from response - YOUR API RETURNS: { success: true, products: [...] }
+  const suggestions = suggestionsData?.products || [];
+console.log("suggestions:",suggestions);
+  // Debug logs
+  useEffect(() => {
+    if (debouncedSearchTerm.length >= 2) {
+      console.log('🔍 Search Term:', searchTerm);
+      console.log('⏱️ Debounced Term:', debouncedSearchTerm);
+      console.log('📦 Full API Response:', suggestionsData);
+      console.log('📋 Extracted Products:', suggestions);
+      console.log('🔢 Number of suggestions:', suggestions?.length);
+      console.log('⏳ Is Fetching:', isFetching);
+      console.log('❌ Error:', error);
+    }
+  }, [searchTerm, debouncedSearchTerm, suggestionsData, suggestions, isFetching, error]);
 
   const navigation = {
     categories: [
@@ -76,11 +118,43 @@ export default function Navbar() {
     pages: [{ name: "Store", href: "/store" }],
   };
 
-  const handleSearch = () => {
-    if (searchTerm.trim()) {
-      navigate(`/search/${searchTerm}`);
-      setMobileSearchOpen(false);
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
     }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Show suggestions when we have results and input is focused
+  useEffect(() => {
+    if (suggestions && suggestions.length > 0 && searchFocused && debouncedSearchTerm.length >= 2) {
+      console.log('✅ Showing suggestions dropdown');
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
+  }, [suggestions, searchFocused, debouncedSearchTerm]);
+
+  const handleSearch = (term = searchTerm) => {
+    if (term.trim()) {
+      navigate(`/search/${term}`);
+      setMobileSearchOpen(false);
+      setShowSuggestions(false);
+      setSearchTerm("");
+    }
+  };
+
+  const handleSuggestionClick = (product) => {
+    // Get the search text from the product
+    const searchValue = product.name || product.title || product.productName || '';
+    setSearchTerm(searchValue);
+    setShowSuggestions(false);
+    handleSearch(searchValue);
   };
 
   const handleLogout = () => {
@@ -101,28 +175,6 @@ export default function Navbar() {
       className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm"
     >
       <style>{`
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes fadeInScale {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
         @keyframes pulse-badge {
           0%, 100% {
             box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
@@ -134,10 +186,6 @@ export default function Navbar() {
 
         .pulse-badge {
           animation: pulse-badge 2s infinite;
-        }
-
-        .menu-item-enter {
-          animation: slideDown 0.3s ease-out forwards;
         }
 
         .nav-link {
@@ -166,6 +214,14 @@ export default function Navbar() {
 
         .icon-hover:hover {
           transform: scale(1.1) rotate(5deg);
+        }
+
+        .search-suggestion-item {
+          transition: all 0.2s ease;
+        }
+
+        .search-suggestion-item:hover {
+          background: linear-gradient(90deg, #fef2f2, #ffffff);
         }
       `}</style>
 
@@ -202,7 +258,7 @@ export default function Navbar() {
 
           {/* Categories - Desktop Only */}
           <PopoverGroup className="hidden lg:flex lg:items-center lg:gap-8">
-            {navigation.categories.map((cat, idx) => (
+            {navigation.categories.map((cat) => (
               <Popover key={cat.id} className="relative group">
                 {({ open }) => (
                   <>
@@ -264,6 +320,7 @@ export default function Navbar() {
           <div className="flex items-center gap-2 sm:gap-4 md:gap-6">
             {/* Search Bar - Desktop */}
             <motion.div
+              ref={searchRef}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.1 }}
@@ -276,25 +333,88 @@ export default function Navbar() {
               >
                 <input
                   type="text"
-                  placeholder="Search..."
+                  placeholder="Search products..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                   onFocus={() => setSearchFocused(true)}
-                  onBlur={() => setSearchFocused(false)}
-                  className="w-full rounded-full border border-gray-300 bg-gray-50 pl-4 pr-10 py-2 text-sm focus:bg-white focus:border-red-400 focus:ring-2 focus:ring-red-200 outline-none transition-all"
+                  onBlur={() => {
+                    setSearchFocused(false);
+                    setTimeout(() => setShowSuggestions(false), 200);
+                  }}
+                  className="w- rounded-full border border-gray-300 bg-gray-50 pl-4 pr-10 py-2 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
                 />
                 <motion.div
                   animate={{ scale: searchFocused ? 1.1 : 1 }}
                   transition={{ type: "spring", stiffness: 300 }}
                   className="absolute right-3"
                 >
-                  <MagnifyingGlassIcon
-                    onClick={handleSearch}
-                    className="h-5 w-5 text-gray-400 hover:text-red-500 cursor-pointer transition-colors"
-                  />
+                  {isFetching ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="h-5 w-5 border-2 border-red-500 border-t-transparent rounded-full"
+                    />
+                  ) : (
+                    <MagnifyingGlassIcon
+                      onClick={() => handleSearch()}
+                      className="h-5 w-5 text-gray-400 hover:text-red-500 cursor-pointer transition-colors"
+                    />
+                  )}
                 </motion.div>
               </motion.div>
+
+              {/* Search Suggestions Dropdown */}
+              <AnimatePresence>
+                {showSuggestions && suggestions.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scaleY: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scaleY: 1 }}
+                    exit={{ opacity: 0, y: -8, scaleY: 0.9 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    className="absolute top-full mt-2 w-full bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden origin-top max-h-80 overflow-y-auto z-50"
+                  >
+                 {suggestions.map((product, idx) => (
+  <motion.div
+    key={product._id || product.id || idx}
+    initial={{ opacity: 0, x: -10 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay: idx * 0.03 }}
+    onMouseDown={(e) => {
+      e.preventDefault();
+      handleSuggestionClick(product);
+    }}
+    className="search-suggestion-item px-4 py-3 cursor-pointer border-b border-gray-50 last:border-b-0 flex items-center gap-3"
+  >
+   {/* <MagnifyingGlassIcon className="h-4 w-4 text-gray-400 flex-shrink-0" /> */}
+    <div className="flex-1 min-w-0">
+      <p className="text-sm text-gray-700 hover:text-red-500 transition-colors truncate font-medium">
+        {product.name || product.title || product.productName}
+      </p>
+      {/* {product.category && (
+        <p className="text-xs text-gray-400 truncate">
+          {product.category.main} {product.category.sub ? `> ${product.category.sub}` : ""}
+        </p>
+      )} */}
+    </div>
+   
+  </motion.div>
+))}
+
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* No results message */}
+              {!isFetching && debouncedSearchTerm.length >= 2 && suggestions.length === 0 && searchFocused && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="absolute top-full mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-100 p-4 text-center text-sm text-gray-500"
+                >
+                  No products found for "{debouncedSearchTerm}"
+                </motion.div>
+              )}
             </motion.div>
 
             {/* Search Icon - Mobile */}
@@ -324,18 +444,6 @@ export default function Navbar() {
                 <div className="icon-hover">
                   <HeartIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700 group-hover:text-red-500" />
                 </div>
-                <AnimatePresence>
-                  {cartLength > 0 && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center pulse-badge"
-                    >
-                      {cartLength}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
               </Link>
             </motion.div>
 
@@ -418,17 +526,19 @@ export default function Navbar() {
                           stiffness: 300,
                           damping: 25,
                         }}
-                        className="absolute right-0 mt-3 w-48 bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden"
+                        className="absolute right-0 mt-3 w-48 bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden z-50"
                       >
                         <motion.div className="p-1">
                           <Link
                             to="/profile"
+                            onClick={() => setDropdownOpen(false)}
                             className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-red-500 rounded-md transition-all font-medium"
                           >
                             Profile
                           </Link>
                           <Link
                             to="/orders"
+                            onClick={() => setDropdownOpen(false)}
                             className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-red-500 rounded-md transition-all font-medium"
                           >
                             Orders
@@ -475,10 +585,10 @@ export default function Navbar() {
               animate={{ y: 0 }}
               exit={{ y: "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed top-0 left-0 right-0 bg-white z-50 md:hidden shadow-lg"
+              className="fixed top-0 left-0 right-0 bg-white z-50 md:hidden shadow-lg max-h-screen overflow-y-auto"
             >
               <div className="p-4">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 mb-3">
                   <motion.button
                     onClick={() => setMobileSearchOpen(false)}
                     whileTap={{ scale: 0.9 }}
@@ -489,164 +599,81 @@ export default function Navbar() {
                   <div className="flex-1 relative">
                     <input
                       type="text"
-                      placeholder="Search..."
+                      placeholder="Search products..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                       autoFocus
                       className="w-full rounded-full border border-gray-300 bg-gray-50 pl-4 pr-10 py-2.5 text-sm focus:bg-white focus:border-red-400 focus:ring-2 focus:ring-red-200 outline-none transition-all"
                     />
-                    <MagnifyingGlassIcon
-                      onClick={handleSearch}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-red-500 cursor-pointer transition-colors"
-                    />
+                    {isFetching ? (
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 border-2 border-red-500 border-t-transparent rounded-full"
+                      />
+                    ) : (
+                      <MagnifyingGlassIcon
+                        onClick={() => handleSearch()}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-red-500 cursor-pointer transition-colors"
+                      />
+                    )}
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 bg-black/20 z-40 lg:hidden"
-            />
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed right-0 top-0 bottom-0 w-4/5 max-w-sm bg-white z-50 lg:hidden shadow-xl overflow-y-auto"
-            >
-              <div className="p-6">
-                <motion.button
-                  onClick={() => setMobileOpen(false)}
-                  whileTap={{ scale: 0.9 }}
-                  className="absolute top-4 right-4 text-gray-600"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </motion.button>
-
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.1 }}
-                  className="mt-12 space-y-6"
-                >
-                  {navigation.categories.map((cat, idx) => (
-                    <motion.div
-                      key={cat.id}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.1 }}
-                    >
-                      <p className="font-bold text-gray-900 text-lg mb-3">
-                        {cat.name}
-                      </p>
-                      <ul className="space-y-2 ml-3 border-l-2 border-gray-200 pl-4">
-                        {cat.sections.flatMap((s) =>
-                          s.items.map((i) => (
-                            <li
-                              key={i.name}
-                              className="text-gray-600 text-sm hover:text-red-500 transition-colors cursor-pointer"
-                            >
-                              {i.name}
-                            </li>
-                          ))
-                        )}
-                      </ul>
-                    </motion.div>
-                  ))}
-
-                  {navigation.pages.map((page) => (
-                    <motion.div
-                      key={page.name}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                    >
-                      <Link
-                        to={page.href}
-                        onClick={() => setMobileOpen(false)}
-                        className="block font-bold text-gray-900 text-lg hover:text-red-500 transition-colors"
-                      >
-                        {page.name}
-                      </Link>
-                    </motion.div>
-                  ))}
-
+                {/* Mobile Suggestions */}
+                {suggestions.length > 0 && debouncedSearchTerm.length >= 2 && (
                   <motion.div
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: 1 }}
-                    className="border-t border-gray-200 origin-left"
-                  />
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="space-y-2"
+                  >
+                  {suggestions.map((product, idx) => (
+  <motion.div
+    key={product._id || product.id || idx}
+    initial={{ opacity: 0, x: -10 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay: idx * 0.05 }}
+    onClick={() => handleSuggestionClick(product)}
+    className="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-red-50 transition-colors"
+  >
+    <div className="flex items-center gap-3">
+      {/* <MagnifyingGlassIcon className="h-4 w-4 text-gray-400 flex-shrink-0" /> */}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-gray-700 truncate">
+          {product.name || product.title || product.productName}
+        </p>
+        {/* {product.category && (
+          <p className="text-xs text-gray-400 truncate">
+            {`${product.category.main || ""} ${product.category.sub || ""} ${product.category.type || ""}`.trim()}
+          </p>
+        )} */}
+      </div>
+      {/* {product.price && (
+        <span className="text-xs font-semibold text-red-500">
+          ₹{product.price}
+        </span>
+      )} */}
+    </div>
+  </motion.div>
+))}
 
-                  {!user ? (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="space-y-3"
-                    >
-                      <Link
-                        to="/signin"
-                        onClick={() => setMobileOpen(false)}
-                        className="block text-gray-700 font-medium hover:text-red-500 transition-colors"
-                      >
-                        Sign In
-                      </Link>
-                      <Link
-                        to="/register"
-                        onClick={() => setMobileOpen(false)}
-                        className="block px-4 py-2.5 bg-red-500 text-white rounded-lg text-center font-medium hover:bg-red-600 transition-colors"
-                      >
-                        Register
-                      </Link>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="space-y-3"
-                    >
-                      <div className="pb-3 border-b border-gray-200">
-                        <p className="text-sm text-gray-500">Logged in as</p>
-                        <p className="font-medium text-gray-900">{user.name}</p>
-                      </div>
-                      <Link
-                        to="/profile"
-                        onClick={() => setMobileOpen(false)}
-                        className="block text-gray-700 font-medium hover:text-red-500 transition-colors"
-                      >
-                        Profile
-                      </Link>
-                      <Link
-                        to="/orders"
-                        onClick={() => setMobileOpen(false)}
-                        className="block text-gray-700 font-medium hover:text-red-500 transition-colors"
-                      >
-                        Orders
-                      </Link>
-                      <button
-                        onClick={handleLogout}
-                        className="block w-full text-left text-gray-700 font-medium hover:text-red-500 transition-colors"
-                      >
-                        Logout
-                      </button>
-                    </motion.div>
-                  )}
-                </motion.div>
+                  </motion.div>
+                )}
+
+                {/* No results - Mobile */}
+                {!isFetching && debouncedSearchTerm.length >= 2 && suggestions.length === 0 && (
+                  <div className="text-center py-8 text-sm text-gray-500">
+                    No products found for "{debouncedSearchTerm}"
+                  </div>
+                )}
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
+
+      {/* Keep your existing mobile menu */}
     </motion.header>
   );
 }

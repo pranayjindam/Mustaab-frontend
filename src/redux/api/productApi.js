@@ -20,6 +20,9 @@ searchProducts: builder.query({
   query: (keyword) => `/product/search/${keyword}`,
   providesTags: ["Product"]
 }),
+getSearchSuggestions: builder.query({
+  query: (keyword) => `/product/search/suggestions?query=${keyword}`,
+}),
 
     createProduct: builder.mutation({
       query: (data) => ({ url: "/product/add", method: "POST", body: data }),
@@ -44,5 +47,7 @@ export const {
   useSearchProductsQuery,
   useCreateProductMutation,
   useUpdateProductMutation,
-  useDeleteProductMutation
+  useDeleteProductMutation,
+  useGetSearchSuggestionsQuery
+
 } = productApi;
