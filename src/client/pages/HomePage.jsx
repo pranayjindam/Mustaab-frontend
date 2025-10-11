@@ -1,5 +1,5 @@
-import React, { useEffect, useState }, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useSelector} from "react-redux";
+import { useEffect,useState } from "react";
 import {
   motion,
   useScroll,
