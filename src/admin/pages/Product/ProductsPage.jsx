@@ -1,19 +1,18 @@
-// admin/AdminProductPage.jsx
+// AdminProductPage.jsx - Product list with create modal
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   useGetAllProductsQuery,
   useDeleteProductMutation,
-} from "../../redux/api/productApi";
+} from "../../../redux/api/productApi";
 import { Plus, Edit, Trash2, Eye, Search } from "lucide-react";
-import ProductForm from "../pages/ProductForm";
+import ProductForm from "./ProductForm";
 
 export default function AdminProductPage() {
   const navigate = useNavigate();
   const { data, isLoading } = useGetAllProductsQuery();
   const [deleteProduct] = useDeleteProductMutation();
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -49,18 +48,9 @@ export default function AdminProductPage() {
     navigate(`/admin/products/${productId}`);
   };
 
-  // 🆕 Added a new edit handler to open details page
   const handleEdit = (product, e) => {
     e.stopPropagation();
-    // ✅ navigate to AdminProductDetailsPage using product id
     navigate(`/admin/products/edit/${product._id}`);
-  };
-
-  // Optional: keep this old edit logic for modal use (not removed)
-  const handleEditInModal = (product, e) => {
-    e.stopPropagation();
-    setSelectedProduct(product);
-    setShowForm(true);
   };
 
   const filteredProducts = data?.products?.filter((product) => {
@@ -121,10 +111,7 @@ export default function AdminProductPage() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.97 }}
             className="flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
-            onClick={() => {
-              setSelectedProduct(null);
-              setShowForm(true);
-            }}
+            onClick={() => setShowForm(true)}
           >
             <Plus size={20} /> Add Product
           </motion.button>
@@ -252,13 +239,15 @@ export default function AdminProductPage() {
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
                           className="p-2 bg-indigo-100 text-indigo-600 rounded-lg hover:bg-indigo-200 transition-colors"
-                          onClick={() => handleProductClick(p._id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleProductClick(p._id);
+                          }}
                           title="View Details"
                         >
                           <Eye size={16} />
                         </motion.button>
 
-                        {/* 🆕 Now opens the details page instead of modal */}
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
@@ -303,15 +292,12 @@ export default function AdminProductPage() {
         </div>
       </motion.div>
 
-      {/* Product Form Modal (unchanged) */}
+      {/* Product Form Modal */}
       <AnimatePresence>
         {showForm && (
           <ProductForm
-            product={selectedProduct}
-            onClose={() => {
-              setShowForm(false);
-              setSelectedProduct(null);
-            }}
+            product={null}
+            onClose={() => setShowForm(false)}
           />
         )}
       </AnimatePresence>

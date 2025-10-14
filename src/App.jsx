@@ -8,16 +8,18 @@ import HomePage from "./client/pages/HomePage.jsx";
 import Login from "./pages/LoginPage.jsx";
 import Register from "./pages/SignupPage.jsx";
 import ProductDetailsPage from "./client/pages/ProductDetailsPage.jsx";
-import AdminProductDetailsPage from "./admin/pages/AdminProductDetailsPage.jsx";
+import AdminProductDetailsPage from "./admin/pages/Product/AdminProductDetailsPage.jsx";
 import Cart from "./client/pages/CartPage.jsx";
 import Checkout from "./client/pages/checkout/Checkout.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import SearchPage from "./client/pages/SearchPage.jsx";
 import InitialLoader from "./client/components/InitialLoader.jsx";
+import ChatbotLauncher from "./client/components/ChatbotLauncher.jsx";
+import ProductFormWrapper from "./admin/pages/Product/ProductFormWrapper.jsx";
 // ===== Admin Pages =====
 import DashboardLayout from "./admin/pages/Dashboard.jsx";
 import CategoriesPage from "./admin/pages/CategoriesPage.jsx";
-import ProductsPage from "./admin/pages/ProductsPage.jsx";
+import ProductsPage from "./admin/pages/Product/ProductsPage.jsx";
 import CarouselPage from "./admin/pages/CarouselPage.jsx";
 import AddressPage from "./admin/pages/AddressPage.jsx";
 import ReviewPage from "./admin/pages/ReviewsPage.jsx";
@@ -34,7 +36,7 @@ import ReturnRequestsPage from "./admin/pages/ReturnRequestsPage.jsx";
 import Store from "./client/pages/StorePage.jsx";
 import BarcodeScanner from "./admin/pages/BarCodeScanner.jsx";
 import BarcodeCameraScanner from "./admin/pages/BarCodeCameraScanner.jsx";
-import ProductForm from "./admin/pages/ProductForm.jsx";
+import ProductForm from "./admin/pages/Product/ProductForm.jsx";
 
 // ===== Protected Route (Redux) =====
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -74,6 +76,7 @@ export default function App() {
      {showLoader ? (
         <InitialLoader onFinish={() => setShowLoader(false)} />
       ) : (
+        <>
     <Routes>
       {/* ===== Public client routes ===== */}
       <Route
@@ -177,36 +180,37 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/admin/products/:id"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <DashboardLayout>
-              <AdminProductDetailsPage />
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/products/edit/:id"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <DashboardLayout>
-              <ProductForm />
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/products/scan"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <DashboardLayout>
-              <BarcodeScanner />
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
+<Route
+  path="/admin/products/:id"
+  element={
+    <ProtectedRoute allowedRoles={["ADMIN"]}>
+      <DashboardLayout>
+        <AdminProductDetailsPage />
+      </DashboardLayout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/admin/products/:productId"
+  element={
+    <ProtectedRoute allowedRoles={["ADMIN"]}>
+      <DashboardLayout>
+        <AdminProductDetailsPage />
+      </DashboardLayout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/admin/products/edit/:productId"
+  element={
+    <ProtectedRoute allowedRoles={["ADMIN"]}>
+      <DashboardLayout>
+        <ProductFormWrapper />
+      </DashboardLayout>
+    </ProtectedRoute>
+  }
+/>
+
       <Route
         path="/admin/products/camscan"
         element={
@@ -288,6 +292,8 @@ export default function App() {
       {/* ===== Fallback ===== */}
       <Route path="*" element={<Navigate to="/" />} />
   </Routes>
+      <ChatbotLauncher/>
+  </>
       )}
     </>
   );

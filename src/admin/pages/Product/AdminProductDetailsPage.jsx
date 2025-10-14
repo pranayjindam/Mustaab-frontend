@@ -5,8 +5,8 @@ import { X, Edit, Trash2, Package } from "lucide-react";
 import {
   useGetProductByIdQuery,
   useDeleteProductMutation,
-} from "../../redux/api/productApi";
-import BarcodeSection from "./BarcodeSection";
+} from "../../../redux/api/productApi";
+import BarcodeSection from "../BarcodeSection";
 
 const AdminProductDetailsPage = () => {
   const { id } = useParams();
