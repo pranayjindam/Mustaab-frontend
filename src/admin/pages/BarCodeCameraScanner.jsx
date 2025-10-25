@@ -1,109 +1,59 @@
-import React, { useRef, useEffect, useState } from "react";
-import { BrowserMultiFormatReader, BarcodeFormat } from "@zxing/library";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLazyGetProductByBarcodeQuery } from "../../redux/api/productApi";
 
-const BarcodeCameraScanner = () => {
-  const videoRef = useRef(null);
-  const [barcodeText, setBarcodeText] = useState("");
-  const [imageFile, setImageFile] = useState(null);
+const BarcodeScannerInput = () => {
+  const [scanned, setScanned] = useState("");
   const navigate = useNavigate();
 
-  const selectedFormats = [
-    BarcodeFormat.CODE_128,
-    BarcodeFormat.CODE_39,
-    BarcodeFormat.EAN_13,
-    BarcodeFormat.EAN_8,
-    BarcodeFormat.UPC_A,
-    BarcodeFormat.UPC_E,
-  ];
+  const [lookupProduct] = useLazyGetProductByBarcodeQuery(); // 👈 lazy query
 
-  // --- Live camera scanning ---
   useEffect(() => {
-    const codeReader = new BrowserMultiFormatReader();
-    let lastResult = null;
+    let buffer = "";
+    let timeout = null;
 
-    const startCamera = async () => {
-      try {
-        const devices = await codeReader.listVideoInputDevices();
-        if (!devices || devices.length === 0) return;
+    const handleKeyDown = async (e) => {
+      if (timeout) clearTimeout(timeout);
 
-        const selectedDeviceId = devices[0].deviceId;
+      if (e.key === "Enter") {
+        if (buffer.length > 0) {
+          setScanned(buffer); // display scanned code
 
-        codeReader.decodeFromVideoDevice(
-          selectedDeviceId,
-          videoRef.current,
-          (result, error) => {
-            if (result) {
-              const text = result.getText();
-              const format = result.getBarcodeFormat();
-
-              if (selectedFormats.includes(format) && text !== lastResult) {
-                lastResult = text;
-                setBarcodeText(text);
-                console.log("Barcode detected:", text);
-                // Do NOT reset here, keep video running
-              }
+          // Lookup product by barcode
+          try {
+            const result = await lookupProduct(buffer).unwrap();
+            if (result?.product?._id) {
+              navigate(`/product/${result.product._id}`);
+            } else {
+              alert("Product not found for barcode: " + buffer);
             }
+          } catch (err) {
+            console.error(err);
+            alert("Error looking up product");
           }
-        );
-      } catch (err) {
-        console.error("Camera error:", err);
+
+          buffer = ""; // reset buffer
+        }
+      } else if (e.key.length === 1) {
+        buffer += e.key;
       }
+
+      timeout = setTimeout(() => (buffer = ""), 150);
     };
 
-    startCamera();
-
-    return () => codeReader.reset(); // stop camera when component unmounts
-  }, []);
-
-  // --- Image upload scanning ---
-  useEffect(() => {
-    if (!imageFile) return;
-    const codeReader = new BrowserMultiFormatReader();
-    const img = new Image();
-    img.src = URL.createObjectURL(imageFile);
-    img.onload = () => {
-      codeReader
-        .decodeFromImage(img)
-        .then((res) => setBarcodeText(res.getText()))
-        .catch(() => console.log("No barcode detected in image"));
-    };
-  }, [imageFile]);
-
-  // --- Navigate on valid MongoDB ObjectId ---
-  useEffect(() => {
-    if (barcodeText.length === 24) {
-      navigate(`/product/${barcodeText}`);
-    }
-  }, [barcodeText, navigate]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [navigate, lookupProduct]);
 
   return (
-    <div style={{ textAlign: "center" }}>
-      <h2>Scan Barcode</h2>
-
-      {/* Camera */}
-      <video
-        ref={videoRef}
-        style={{ width: 900, height: 500, border: "1px solid black" }}
-        autoPlay
-        muted
-      />
-
-      {/* Or upload image */}
-      <div style={{ marginTop: 20 }}>
-        <p>Or upload barcode image:</p>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setImageFile(e.target.files[0])}
-        />
-      </div>
-
-      <p style={{ marginTop: 20 }}>
-        Result: {barcodeText || "No barcode detected"}
+    <div style={{ textAlign: "center", marginTop: "40px" }}>
+      <h2>Scan Barcode with Scanner</h2>
+      <p>Focus anywhere and scan the barcode using your scanner.</p>
+      <p style={{ fontSize: "1.2em", marginTop: "20px" }}>
+        Scanned: <strong>{scanned || "Waiting for scan..."}</strong>
       </p>
     </div>
   );
 };
 
-export default BarcodeCameraScanner;
+export default BarcodeScannerInput;

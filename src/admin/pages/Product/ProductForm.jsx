@@ -107,20 +107,22 @@ export default function ProductForm({ product, onClose }) {
 
   const isEdit = !!product;
 
-  const [form, setForm] = useState({
-    title: product?.title || "",
-    description: product?.description || "",
-    category: product?.category || { main: "", sub: "", type: "" },
-    tags: product?.tags || [],
-    sizes: product?.sizes || [],
-    colors: product?.colors?.map(c => ({ ...c })) || [{ name: "", imageFile: null }],
-    price: product?.price || "",
-    stock: product?.stock || "",
-    discount: product?.discount || 0,
-    isFeatured: product?.isFeatured || false,
-    isReturnable: product?.isReturnable || false,
-    isExchangeable: product?.isExchangeable || false,
-  });
+ const [form, setForm] = useState({
+  title: product?.title || "",
+  description: product?.description || "",
+  category: product?.category || { main: "", sub: "", type: "" },
+  tags: product?.tags || [],
+  sizes: product?.sizes || [],
+  colors: product?.colors?.map(c => ({ ...c })) || [{ name: "", imageFile: null }],
+  price: product?.price || "",
+  stock: product?.stock || "",
+  discount: product?.discount || 0,
+  isFeatured: product?.isFeatured || false,
+  isReturnable: product?.isReturnable || false,
+  isExchangeable: product?.isExchangeable || false,
+  barcode: product?.barcode || "" // 👈 added here
+});
+
 
   // New state for files
   const [thumbnailFile, setThumbnailFile] = useState(null);
@@ -206,28 +208,43 @@ export default function ProductForm({ product, onClose }) {
 const handleSubmit = async (e) => {
   e.preventDefault();
   try {
+    let finalBarcode = form.barcode;
+
+    // ✅ Generate a 12-digit random numeric barcode if not manually entered
+    if (!finalBarcode || finalBarcode.trim() === "") {
+      finalBarcode = Math.floor(100000000000 + Math.random() * 900000000000).toString();
+    }
+
+    // ✅ Update local form state to keep UI consistent
+    setForm((prev) => ({ ...prev, barcode: finalBarcode }));
+
     const formData = new FormData();
+
+    // ✅ Append all fields including barcode
     Object.entries({
       title: form.title,
       description: form.description,
       price: form.price,
       stock: form.stock,
       discount: form.discount,
+      barcode: finalBarcode, // <-- important
       isFeatured: form.isFeatured,
       isReturnable: form.isReturnable,
       isExchangeable: form.isExchangeable,
       category: JSON.stringify(form.category),
-      tags: JSON.stringify(form.tags.filter(t => t.trim())),
-      sizes: JSON.stringify(form.sizes.filter(s => s.trim())),
-      colors: JSON.stringify(form.colors.map(c => ({ name: c.name })))
+      tags: JSON.stringify(form.tags.filter((t) => t.trim())),
+      sizes: JSON.stringify(form.sizes.filter((s) => s.trim())),
+      colors: JSON.stringify(form.colors.map((c) => ({ name: c.name }))),
     }).forEach(([k, v]) => formData.append(k, v));
 
+    // ✅ Append media files
     if (thumbnailFile) formData.append("thumbnail", thumbnailFile);
-    imageFiles.forEach(file => formData.append("images", file));
-    form.colors.forEach(c => c.imageFile && formData.append("colorImages", c.imageFile));
+    imageFiles.forEach((file) => formData.append("images", file));
+    form.colors.forEach((c) => c.imageFile && formData.append("colorImages", c.imageFile));
 
+    // ✅ Submit to backend (RTK mutations)
     if (isEdit) {
-      await updateProduct({ id: product._id, body: formData }).unwrap(); // ensure RTK mutation uses {body: formData}
+      await updateProduct({ id: product._id, body: formData }).unwrap();
     } else {
       await createProduct(formData).unwrap();
     }
@@ -239,6 +256,7 @@ const handleSubmit = async (e) => {
     alert(err?.data?.message || "Something went wrong");
   }
 };
+
 
 
 
@@ -286,6 +304,19 @@ const handleSubmit = async (e) => {
                 placeholder="Enter product title"
                 required
               />
+              <Input
+  label="Barcode (numeric only)"
+  name="barcode"
+  value={form.barcode}
+  onChange={(e) => {
+    const value = e.target.value;
+    if (/^\d*$/.test(value)) { // only allow numbers
+      setForm({ ...form, barcode: value });
+    }
+  }}
+  placeholder="Leave empty to auto-generate"
+/>
+
               <Textarea
                 label="Description"
                 name="description"

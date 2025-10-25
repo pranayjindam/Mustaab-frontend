@@ -5,24 +5,22 @@ import Barcode from "react-barcode";
 export default function BarcodeSection({ product }) {
   const printRef = useRef(null);
 
-  // Create print handler once
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
     documentTitle: product?.title || "barcode",
     removeAfterPrint: false,
   });
 
-  if (!product) return null;
+  if (!product || !product.barcode) return null; // ensure barcode exists
 
   return (
     <div className="mt-6">
-      {/* Keep this container always mounted */}
       <div ref={printRef}>
         <div className="p-4 border rounded-md inline-block bg-white">
           <h3 className="text-gray-800 font-semibold mb-2">{product.title}</h3>
           <Barcode
-            value={product._id.toString()}
-            format="CODE128"
+            value={product.barcode}   // use product's barcode directly
+            format="EAN13"             // numeric-only standard
             width={2}
             height={50}
             renderer="svg"

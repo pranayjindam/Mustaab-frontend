@@ -15,6 +15,10 @@ export const productApi = apiSlice.injectEndpoints({
       query: (category) => `/product/category/${category}`,
       providesTags: (result, error, category) => [{ type: "Product", id: category }]
     }),
+    getProductByBarcode: builder.query({
+      query: (barcode) => `/product/lookup/${barcode}`,
+      providesTags: ["Product"],
+    }),
    // redux/api/productApi.js
 searchProducts: builder.query({
   query: (keyword) => `/product/search/${keyword}`,
@@ -48,6 +52,8 @@ export const {
   useCreateProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,
-  useGetSearchSuggestionsQuery
+  useGetSearchSuggestionsQuery,
+    useGetProductByBarcodeQuery,   // normal query (optional)
+  useLazyGetProductByBarcodeQuery, // 👈 lazy query
 
 } = productApi;
