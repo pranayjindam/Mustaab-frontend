@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGetAllCategoriesQuery } from "../../../redux/api/categoryApi";
-import { useCreateProductMutation,useUpdateProductMutation } from "../../../redux/api/productApi";
+import { useCreateProductMutation, useUpdateProductMutation } from "../../../redux/api/productApi";
 import { X, Plus, Trash2, Check } from "lucide-react";
 
 // Reusable Components
@@ -98,10 +98,10 @@ const AddButton = ({ label, onClick }) => (
 
 export default function ProductForm({ product, onClose }) {
   const { data: categoryData } = useGetAllCategoriesQuery();
- const categories = categoryData?.categories || []; // the array itself
-const mainCategories = categories.filter(cat => cat.level === "main");
-const subCategories = categories.filter(cat => cat.level === "sub");
-const typeCategories = categories.filter(cat => cat.level === "type");
+  const categories = categoryData?.categories || [];
+  const mainCategories = categories.filter(cat => cat.level === "main");
+  const subCategories = categories.filter(cat => cat.level === "sub");
+  const typeCategories = categories.filter(cat => cat.level === "type");
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
 
@@ -113,16 +113,19 @@ const typeCategories = categories.filter(cat => cat.level === "type");
     category: product?.category || { main: "", sub: "", type: "" },
     tags: product?.tags || [],
     sizes: product?.sizes || [],
-    colors: product?.colors || [{ name: "", image: "" }],
+    colors: product?.colors?.map(c => ({ ...c })) || [{ name: "", imageFile: null }],
     price: product?.price || "",
     stock: product?.stock || "",
     discount: product?.discount || 0,
-    images: product?.images || [""],
-    thumbnail: product?.thumbnail || "",
     isFeatured: product?.isFeatured || false,
     isReturnable: product?.isReturnable || false,
     isExchangeable: product?.isExchangeable || false,
   });
+
+  // New state for files
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);
+
   const filteredSubCategories = useMemo(() => {
     if (!form.category.main) return [];
     return subCategories.filter((sub) =>
@@ -143,15 +146,13 @@ const typeCategories = categories.filter(cat => cat.level === "type");
   };
 
   const handleCategoryChange = (level, value) => {
-    setForm((prev) => {
+    setForm(prev => {
       const newCategory = { ...prev.category, [level]: value };
       if (level === "main") {
         newCategory.sub = "";
         newCategory.type = "";
       }
-      if (level === "sub") {
-        newCategory.type = "";
-      }
+      if (level === "sub") newCategory.type = "";
       return { ...prev, category: newCategory };
     });
   };
@@ -178,9 +179,13 @@ const typeCategories = categories.filter(cat => cat.level === "type");
     setForm({ ...form, colors: arr });
   };
 
-  const addColor = () => {
-    setForm({ ...form, colors: [...form.colors, { name: "", image: "" }] });
+  const handleColorFileChange = (index, file) => {
+    const arr = [...form.colors];
+    arr[index].imageFile = file;
+    setForm({ ...form, colors: arr });
   };
+
+  const addColor = () => setForm({ ...form, colors: [...form.colors, { name: "", imageFile: null }] });
 
   const removeColor = (index) => {
     if (form.colors.length > 1) {
@@ -189,36 +194,53 @@ const typeCategories = categories.filter(cat => cat.level === "type");
       setForm({ ...form, colors: arr });
     }
   };
+  useEffect(() => {
+  return () => {
+    imageFiles.forEach(file => URL.revokeObjectURL(file));
+    if (thumbnailFile) URL.revokeObjectURL(thumbnailFile);
+    form.colors.forEach(c => c.imageFile && URL.revokeObjectURL(c.imageFile));
+  };
+}, [imageFiles, thumbnailFile, form.colors]);
+
 
 const handleSubmit = async (e) => {
   e.preventDefault();
-  
-  const cleanedData = {
-    ...form,
-    tags: form.tags.filter(t => t.trim() !== ""),
-    sizes: form.sizes.filter(s => s.trim() !== ""),
-    colors: form.colors.filter(c => c.name.trim() !== ""),
-    images: form.images.filter(img => img.trim() !== ""),
-    price: parseFloat(form.price),
-    stock: parseInt(form.stock),
-    discount: parseFloat(form.discount) || 0,
-  };
-
   try {
-if (isEdit) {
-  await updateProduct({ id: product._id, ...cleanedData }).unwrap();
-  alert("Product updated successfully!");
-  onClose(); // in full-page mode, this will navigate back
-} else {
-  await createProduct(cleanedData).unwrap();
-  alert("Product created successfully!");
-  onClose();
-}
- } catch (err) {
+    const formData = new FormData();
+    Object.entries({
+      title: form.title,
+      description: form.description,
+      price: form.price,
+      stock: form.stock,
+      discount: form.discount,
+      isFeatured: form.isFeatured,
+      isReturnable: form.isReturnable,
+      isExchangeable: form.isExchangeable,
+      category: JSON.stringify(form.category),
+      tags: JSON.stringify(form.tags.filter(t => t.trim())),
+      sizes: JSON.stringify(form.sizes.filter(s => s.trim())),
+      colors: JSON.stringify(form.colors.map(c => ({ name: c.name })))
+    }).forEach(([k, v]) => formData.append(k, v));
+
+    if (thumbnailFile) formData.append("thumbnail", thumbnailFile);
+    imageFiles.forEach(file => formData.append("images", file));
+    form.colors.forEach(c => c.imageFile && formData.append("colorImages", c.imageFile));
+
+    if (isEdit) {
+      await updateProduct({ id: product._id, body: formData }).unwrap(); // ensure RTK mutation uses {body: formData}
+    } else {
+      await createProduct(formData).unwrap();
+    }
+
+    alert(isEdit ? "Product updated!" : "Product created!");
+    onClose();
+  } catch (err) {
     console.error(err);
     alert(err?.data?.message || "Something went wrong");
   }
 };
+
+
 
 
 
@@ -235,9 +257,9 @@ if (isEdit) {
         {/* Header */}
         <div className="sticky top-0 z-20 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-6 shadow-md flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-bold text-white">Create New Product</h2>
+            <h2 className="text-2xl font-bold text-white">{isEdit ? "Edit Product" : "Create New Product"}</h2>
             <p className="text-indigo-100 text-sm mt-1">
-              Fill in the details below to add a new product
+              Fill in the details below
             </p>
           </div>
           <motion.button
@@ -253,6 +275,7 @@ if (isEdit) {
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="max-w-5xl mx-auto px-6 py-10 space-y-10">
+          {/* Basic Info */}
           <Section title="Basic Information" index={1} color="from-indigo-500 to-purple-600">
             <div className="space-y-5">
               <Input
@@ -273,35 +296,34 @@ if (isEdit) {
             </div>
           </Section>
 
+          {/* Categories */}
           <Section title="Categories" index={2} color="from-purple-500 to-pink-600">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-             <Select
-  label="Main Category *"
-  value={form.category.main || ""}
-  onChange={(e) => handleCategoryChange("main", e.target.value)}
-  options={mainCategories}
-  required
-/>
-
-<Select
-  label="Sub Category"
-  value={form.category.sub || ""}
-  onChange={(e) => handleCategoryChange("sub", e.target.value)}
-  options={filteredSubCategories}
-  disabled={!form.category.main}
-/>
-
-<Select
-  label="Type"
-  value={form.category.type || ""}
-  onChange={(e) => handleCategoryChange("type", e.target.value)}
-  options={filteredTypeCategories}
-  disabled={!form.category.sub}
-/>
-
+              <Select
+                label="Main Category *"
+                value={form.category.main || ""}
+                onChange={(e) => handleCategoryChange("main", e.target.value)}
+                options={mainCategories}
+                required
+              />
+              <Select
+                label="Sub Category"
+                value={form.category.sub || ""}
+                onChange={(e) => handleCategoryChange("sub", e.target.value)}
+                options={filteredSubCategories}
+                disabled={!form.category.main}
+              />
+              <Select
+                label="Type"
+                value={form.category.type || ""}
+                onChange={(e) => handleCategoryChange("type", e.target.value)}
+                options={filteredTypeCategories}
+                disabled={!form.category.sub}
+              />
             </div>
           </Section>
 
+          {/* Tags */}
           <Section title="Tags" index={3} color="from-pink-500 to-rose-600">
             <DynamicList
               items={form.tags}
@@ -312,6 +334,7 @@ if (isEdit) {
             />
           </Section>
 
+          {/* Sizes */}
           <Section title="Sizes" index={4} color="from-rose-500 to-orange-500">
             <DynamicList
               items={form.sizes}
@@ -322,20 +345,28 @@ if (isEdit) {
             />
           </Section>
 
+          {/* Color Variants */}
           <Section title="Color Variants" index={5} color="from-orange-500 to-yellow-600">
             <div className="space-y-3">
               {form.colors.map((c, i) => (
-                <div key={i} className="flex gap-3">
+                <div key={i} className="flex gap-3 items-center">
                   <Input
                     placeholder="Color name"
                     value={c.name}
                     onChange={(e) => handleColorChange(i, "name", e.target.value)}
                   />
-                  <Input
-                    placeholder="Image URL"
-                    value={c.image}
-                    onChange={(e) => handleColorChange(i, "image", e.target.value)}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleColorFileChange(i, e.target.files[0])}
                   />
+                  {c.imageFile && (
+                    <img
+                      src={URL.createObjectURL(c.imageFile)}
+                      alt="color"
+                      className="w-10 h-10 object-cover rounded"
+                    />
+                  )}
                   <button
                     type="button"
                     onClick={() => removeColor(i)}
@@ -350,6 +381,7 @@ if (isEdit) {
             </div>
           </Section>
 
+          {/* Pricing & Inventory */}
           <Section title="Pricing & Inventory" index={6} color="from-yellow-500 to-green-600">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Input
@@ -387,30 +419,56 @@ if (isEdit) {
             </div>
           </Section>
 
+          {/* Media */}
           <Section title="Media" index={7} color="from-green-500 to-teal-600">
             <div className="space-y-4">
-              <Input
-                label="Thumbnail URL"
-                name="thumbnail"
-                value={form.thumbnail}
-                onChange={handleChange}
-                placeholder="https://example.com/image.jpg"
+              <label className="block text-sm font-medium text-gray-700 mb-2">Thumbnail</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setThumbnailFile(e.target.files[0])}
               />
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Additional Images
-                </label>
-                <DynamicList
-                  items={form.images}
-                  onAdd={() => addArrayItem("images")}
-                  onRemove={(i) => removeArrayItem("images", i)}
-                  onChange={(i, v) => handleArrayChange("images", i, v)}
-                  placeholder="https://example.com/image.jpg"
+              {thumbnailFile && (
+                <img
+                  src={URL.createObjectURL(thumbnailFile)}
+                  alt="thumbnail"
+                  className="w-20 h-20 object-cover rounded mt-2"
                 />
+              )}
+
+              <label className="block text-sm font-medium text-gray-700 mb-2 mt-4">Additional Images</label>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => setImageFiles(Array.from(e.target.files))}
+              />
+              <div className="flex gap-2 flex-wrap mt-2">
+                {imageFiles.map((file, i) => (
+                  <div key={i} className="relative w-20 h-20">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const arr = [...imageFiles];
+                        arr.splice(i, 1);
+                        setImageFiles(arr);
+                      }}
+                      className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           </Section>
 
+          {/* Product Options */}
           <Section title="Product Options" index={8} color="from-teal-500 to-blue-600">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
@@ -436,6 +494,7 @@ if (isEdit) {
             </div>
           </Section>
 
+          {/* Submit Buttons */}
           <div className="flex justify-end gap-3 pt-8 border-t border-gray-200">
             <button
               type="button"
@@ -445,14 +504,13 @@ if (isEdit) {
             >
               Cancel
             </button>
-<h2 className="text-2xl font-bold text-white">
-  {isEdit ? "Edit Product" : "Create New Product"}
-</h2>
-
-<motion.button type="submit" disabled={isCreating || isUpdating}>
-  {isEdit ? (isUpdating ? "Updating..." : "Update Product") : (isCreating ? "Creating..." : "Create Product")}
-</motion.button>
-
+            <motion.button
+              type="submit"
+              disabled={isCreating || isUpdating}
+              className="px-6 py-3 rounded-xl font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition"
+            >
+              {isEdit ? (isUpdating ? "Updating..." : "Update Product") : (isCreating ? "Creating..." : "Create Product")}
+            </motion.button>
           </div>
         </form>
       </motion.div>
