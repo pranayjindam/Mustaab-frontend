@@ -15,15 +15,26 @@ const baseQuery = fetchBaseQuery({
 });
 
 const baseQueryWithReauth = async (args, api, extraOptions) => {
-  let result = await baseQuery(args, api, extraOptions);
+  const result = await baseQuery(args, api, extraOptions);
 
-  if (result.error && result.error.status === 401) {
-    api.dispatch(logout());
-    window.location.href = "/signin";
+  if (result?.error?.status === 401) {
+    const url = args?.url || "";
+    const isPublicEndpoint =
+      url.includes("/recent") ||
+      url.includes("/products") ||
+      url.includes("/categories") ||
+      url.includes("/carousel");
+
+    if (!isPublicEndpoint) {
+      api.dispatch(logout());
+      // better UX: avoid full page reload
+      window.history.pushState({}, "", "/signin");
+    }
   }
 
   return result;
 };
+
 
 export const apiSlice = createApi({
   reducerPath: "api",

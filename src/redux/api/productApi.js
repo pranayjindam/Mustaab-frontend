@@ -32,10 +32,15 @@ getSearchSuggestions: builder.query({
       query: (data) => ({ url: "/product/add", method: "POST", body: data }),
       invalidatesTags: ["Product"]
     }),
-    updateProduct: builder.mutation({
-      query: ({ id, ...data }) => ({ url: `/product/${id}`, method: "PUT", body: data }),
-      invalidatesTags: ["Product"]
-    }),
+ updateProduct: builder.mutation({
+  query: ({ id, body }) => ({
+    url: `/product/${id}`,
+    method: "PUT",
+    body, // ✅ send FormData directly
+  }),
+  invalidatesTags: ["Product"],
+}),
+
     deleteProduct: builder.mutation({
       query: (id) => ({ url: `/product/${id}`, method: "DELETE" }),
       invalidatesTags: ["Product"]

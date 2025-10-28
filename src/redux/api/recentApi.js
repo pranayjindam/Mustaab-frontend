@@ -15,13 +15,15 @@ export const recentApi = apiSlice.injectEndpoints({
       },
       invalidatesTags: ["Recent"],
     }),
-    getRecent: builder.query({
-      query: (limit = 5, token) => ({
-        url: `/recent?limit=${limit}`,
-        headers: { Authorization: `Bearer ${token}` },
-      }),
-      providesTags: ["Recent"],
-    }),
+getRecent: builder.query({
+  query: ({ limit = 5, token }) => ({
+    url: `/recent?limit=${limit}`,
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  }),
+  providesTags: ["Recent"],
+}),
+
+
   }),
 });
 

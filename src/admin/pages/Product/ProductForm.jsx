@@ -208,12 +208,12 @@ export default function ProductForm({ product, onClose }) {
 const handleSubmit = async (e) => {
   e.preventDefault();
   try {
-    let finalBarcode = form.barcode;
+ let finalBarcode = form.barcode?.toString() || "";
 
-    // ✅ Generate a 12-digit random numeric barcode if not manually entered
-    if (!finalBarcode || finalBarcode.trim() === "") {
-      finalBarcode = Math.floor(100000000000 + Math.random() * 900000000000).toString();
-    }
+// ✅ Generate a 12-digit random numeric barcode if not manually entered
+if (finalBarcode.trim() === "") {
+  finalBarcode = Math.floor(100000000000 + Math.random() * 900000000000).toString();
+}
 
     // ✅ Update local form state to keep UI consistent
     setForm((prev) => ({ ...prev, barcode: finalBarcode }));

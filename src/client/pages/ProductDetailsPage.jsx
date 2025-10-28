@@ -163,6 +163,51 @@ console.log(reviews);
               ))}
               <span className="text-sm text-gray-600 ml-2">({product.reviews?.length || 0} reviews)</span>
             </div>
+          {/* Colors & Sizes */}
+<div className="mt-4 space-y-4">
+  {product.colors?.length > 0 && (
+    <div>
+      <h3 className="font-semibold text-base sm:text-lg">Select Color:</h3>
+      <div className="flex gap-2 mt-2 overflow-x-auto pb-2 scrollbar-hide">
+        {product.colors.map((color, idx) => (
+          <div
+            key={idx}
+            className={`w-12 h-12 rounded-full border cursor-pointer flex-shrink-0 flex items-center justify-center ${
+              selectedColor === color.name ? "border-4 border-blue-500" : "border-gray-300"
+            }`}
+            onClick={() => {
+              setSelectedColor(color.name);
+              setSelectedImage(color.image || selectedImage);
+            }}
+          >
+            {color.image && (
+              <img src={color.image} alt={color.name} className="w-full h-full rounded-full object-cover" />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
+
+  {product.sizes?.length > 0 && (
+    <div>
+      <h3 className="font-semibold text-base sm:text-lg">Select Size:</h3>
+      <div className="flex gap-2 mt-2 flex-wrap">
+        {product.sizes.map((size) => (
+          <button
+            key={size}
+            className={`px-4 py-2 border rounded-md ${
+              selectedSize === size ? "bg-blue-500 text-white" : "border-gray-300"
+            }`}
+            onClick={() => setSelectedSize(size)}
+          >
+            {size}
+          </button>
+        ))}
+      </div>
+    </div>
+  )}
+</div>
 
             <p className="text-gray-700 mt-4">{product.description}</p>
 
@@ -201,50 +246,7 @@ console.log(reviews);
 </div>
 
 
-            {/* Colors */}
-            {product.colors?.length > 0 && (
-              <div className="mt-4">
-                <h3 className="font-semibold">Select Color:</h3>
-                <div className="flex gap-2 mt-2">
-                  {product.colors.map((color, idx) => (
-                    <div
-                      key={idx}
-                      className={`w-12 h-12 rounded-full border cursor-pointer flex items-center justify-center ${
-                        selectedColor === color.name ? "border-4 border-blue-500" : "border-gray-300"
-                      }`}
-                      onClick={() => {
-                        setSelectedColor(color.name);
-                        setSelectedImage(color.image || selectedImage);
-                      }}
-                    >
-                      {color.image && (
-                        <img src={color.image} alt={color.name} className="w-full h-full rounded-full object-cover" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            {/* Sizes */}
-            {product.sizes?.length > 0 && (
-              <div className="mt-4">
-                <h3 className="font-semibold">Select Size:</h3>
-                <div className="flex gap-2 mt-2 flex-wrap">
-                  {product.sizes.map((size) => (
-                    <button
-                      key={size}
-                      className={`px-4 py-2 border rounded-md ${
-                        selectedSize === size ? "bg-blue-500 text-white" : "border-gray-300"
-                      }`}
-                      onClick={() => setSelectedSize(size)}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Actions */}
             <div className="mt-6 flex flex-col sm:flex-row gap-3">

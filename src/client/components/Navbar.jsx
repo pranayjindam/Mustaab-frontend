@@ -175,6 +175,68 @@ console.log("suggestions:",suggestions);
       className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm"
     >
       <style>{`
+      @media (max-width: 640px) {
+  /* Adjust icon spacing and size */
+  .mobile-icons {
+    gap: 1rem !important;
+  }
+
+  .mobile-icons button,
+  .mobile-icons a {
+    padding: 6px;
+    border-radius: 50%;
+    background-color: #f9f9f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-icons button:hover,
+  .mobile-icons a:hover {
+    background-color: #fef2f2;
+  }
+
+  .mobile-icons svg {
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+
+  /* Increase click area for 3-bar menu */
+  .menu-btn {
+    padding: 8px;
+    border-radius: 50%;
+    background-color: #f9f9f9;
+  }
+
+  .menu-btn:hover {
+    background-color: #fef2f2;
+  }
+
+  /* Adjust cart badge */
+  .cart-badge {
+    top: -6px !important;
+    right: -6px !important;
+    width: 16px !important;
+    height: 16px !important;
+    font-size: 10px !important;
+  }
+}
+
+      @media (max-width: 480px) {
+  nav, .p-4 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .text-sm {
+    font-size: 0.85rem;
+  }
+
+  input[type="text"] {
+    font-size: 0.9rem;
+  }
+}
+
         @keyframes pulse-badge {
           0%, 100% {
             box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
@@ -317,7 +379,7 @@ console.log("suggestions:",suggestions);
           </PopoverGroup>
 
           {/* Right Section */}
-          <div className="flex items-center gap-2 sm:gap-4 md:gap-6">
+          <div className="flex items-center gap-2 sm:gap-4 md:gap-6 mobile-icons">
             {/* Search Bar - Desktop */}
             <motion.div
               ref={searchRef}
@@ -674,6 +736,380 @@ console.log("suggestions:",suggestions);
       </AnimatePresence>
 
       {/* Keep your existing mobile menu */}
+      {/* Mobile Sidebar Menu */}
+<AnimatePresence>
+  {mobileOpen && (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.4 }}
+        exit={{ opacity: 0 }}
+        onClick={() => setMobileOpen(false)}
+        className="fixed inset-0 bg-black z-40"
+      />
+
+      <motion.aside
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="fixed top-0 right-0 bottom-0 w-72 max-w-[85vw] bg-white z-50 shadow-lg flex flex-col"
+      >
+        {/* Header, Links, and Footer remain same */}
+      </motion.aside>
+    </>
+  )}
+</AnimatePresence>
+
+{/* Mobile Sidebar Menu */}
+<AnimatePresence>
+  {mobileOpen && (
+    <>
+      {/* Background overlay */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.4 }}
+        exit={{ opacity: 0 }}
+        onClick={() => setMobileOpen(false)}
+        className="fixed inset-0 bg-black z-40"
+      />
+
+      {/* Sidebar */}
+      <motion.aside
+        initial={{ x: "-100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "-100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="fixed top-0 left-0 bottom-0 w-72 max-w-[85vw] bg-white z-50 shadow-lg flex flex-col"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800">Menu</h2>
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="text-gray-500 hover:text-red-500"
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
+
+        {/* Links */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {navigation.categories.map((cat) => (
+            <div key={cat.id}>
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                {cat.name}
+              </h3>
+              {cat.sections.map((section) =>
+                section.items.map((item) => (
+                  <p
+                    key={item.name}
+                    className="text-sm text-gray-600 py-1 px-2 rounded-md hover:bg-gray-50 cursor-pointer"
+                  >
+                    {item.name}
+                  </p>
+                ))
+              )}
+            </div>
+          ))}
+
+          {navigation.pages.map((page) => (
+            <Link
+              key={page.name}
+              to={page.href}
+              onClick={() => setMobileOpen(false)}
+              className="block text-sm font-medium text-gray-700 hover:text-red-500 py-2"
+            >
+              {page.name}
+            </Link>
+          ))}
+
+          <hr className="my-3 border-gray-200" />
+
+          {!user ? (
+            <div className="space-y-2">
+              <Link
+                to="/signin"
+                onClick={() => setMobileOpen(false)}
+                className="block text-sm font-medium text-gray-700 hover:text-red-500"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/register"
+                onClick={() => setMobileOpen(false)}
+                className="inline-block bg-red-500 text-white text-sm font-semibold px-4 py-2 rounded-full hover:bg-red-600"
+              >
+                Register
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Link
+                to="/profile"
+                onClick={() => setMobileOpen(false)}
+                className="block text-sm font-medium text-gray-700 hover:text-red-500"
+              >
+                Profile
+              </Link>
+              <Link
+                to="/orders"
+                onClick={() => setMobileOpen(false)}
+                className="block text-sm font-medium text-gray-700 hover:text-red-500"
+              >
+                Orders
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="block text-left w-full text-sm font-medium text-gray-700 hover:text-red-500"
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-100 text-center text-xs text-gray-400">
+          © {new Date().getFullYear()} LSH
+        </div>
+      </motion.aside>
+    </>
+  )}
+</AnimatePresence>
+{/* Mobile Sidebar Menu */}
+<AnimatePresence>
+  {mobileOpen && (
+    <>
+      {/* Background overlay */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.4 }}
+        exit={{ opacity: 0 }}
+        onClick={() => setMobileOpen(false)}
+        className="fixed inset-0 bg-black z-40"
+      />
+
+      {/* Sidebar */}
+      <motion.aside
+        initial={{ x: "-100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "-100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="fixed top-0 left-0 bottom-0 w-72 max-w-[85vw] bg-white z-50 shadow-lg flex flex-col"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800">Menu</h2>
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="text-gray-500 hover:text-red-500"
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
+
+        {/* Links */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {navigation.categories.map((cat) => (
+            <div key={cat.id}>
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                {cat.name}
+              </h3>
+              {cat.sections.map((section) =>
+                section.items.map((item) => (
+                  <p
+                    key={item.name}
+                    className="text-sm text-gray-600 py-1 px-2 rounded-md hover:bg-gray-50 cursor-pointer"
+                  >
+                    {item.name}
+                  </p>
+                ))
+              )}
+            </div>
+          ))}
+
+          {navigation.pages.map((page) => (
+            <Link
+              key={page.name}
+              to={page.href}
+              onClick={() => setMobileOpen(false)}
+              className="block text-sm font-medium text-gray-700 hover:text-red-500 py-2"
+            >
+              {page.name}
+            </Link>
+          ))}
+
+          <hr className="my-3 border-gray-200" />
+
+          {!user ? (
+            <div className="space-y-2">
+              <Link
+                to="/signin"
+                onClick={() => setMobileOpen(false)}
+                className="block text-sm font-medium text-gray-700 hover:text-red-500"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/register"
+                onClick={() => setMobileOpen(false)}
+                className="inline-block bg-red-500 text-white text-sm font-semibold px-4 py-2 rounded-full hover:bg-red-600"
+              >
+                Register
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Link
+                to="/profile"
+                onClick={() => setMobileOpen(false)}
+                className="block text-sm font-medium text-gray-700 hover:text-red-500"
+              >
+                Profile
+              </Link>
+              <Link
+                to="/orders"
+                onClick={() => setMobileOpen(false)}
+                className="block text-sm font-medium text-gray-700 hover:text-red-500"
+              >
+                Orders
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="block text-left w-full text-sm font-medium text-gray-700 hover:text-red-500"
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-100 text-center text-xs text-gray-400">
+          © {new Date().getFullYear()} LSH
+        </div>
+      </motion.aside>
+    </>
+  )}
+</AnimatePresence>
+{/* Mobile Sidebar Menu */}
+<AnimatePresence>
+  {mobileOpen && (
+    <>
+      {/* Background overlay */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.4 }}
+        exit={{ opacity: 0 }}
+        onClick={() => setMobileOpen(false)}
+        className="fixed inset-0 bg-black z-40"
+      />
+
+      {/* Sidebar */}
+      <motion.aside
+        initial={{ x: "-100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "-100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="fixed top-0 left-0 bottom-0 w-72 max-w-[85vw] bg-white z-50 shadow-lg flex flex-col"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800">Menu</h2>
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="text-gray-500 hover:text-red-500"
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
+
+        {/* Links */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {navigation.categories.map((cat) => (
+            <div key={cat.id}>
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                {cat.name}
+              </h3>
+              {cat.sections.map((section) =>
+                section.items.map((item) => (
+                  <p
+                    key={item.name}
+                    className="text-sm text-gray-600 py-1 px-2 rounded-md hover:bg-gray-50 cursor-pointer"
+                  >
+                    {item.name}
+                  </p>
+                ))
+              )}
+            </div>
+          ))}
+
+          {navigation.pages.map((page) => (
+            <Link
+              key={page.name}
+              to={page.href}
+              onClick={() => setMobileOpen(false)}
+              className="block text-sm font-medium text-gray-700 hover:text-red-500 py-2"
+            >
+              {page.name}
+            </Link>
+          ))}
+
+          <hr className="my-3 border-gray-200" />
+
+          {!user ? (
+            <div className="space-y-2">
+              <Link
+                to="/signin"
+                onClick={() => setMobileOpen(false)}
+                className="block text-sm font-medium text-gray-700 hover:text-red-500"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/register"
+                onClick={() => setMobileOpen(false)}
+                className="inline-block bg-red-500 text-white text-sm font-semibold px-4 py-2 rounded-full hover:bg-red-600"
+              >
+                Register
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Link
+                to="/profile"
+                onClick={() => setMobileOpen(false)}
+                className="block text-sm font-medium text-gray-700 hover:text-red-500"
+              >
+                Profile
+              </Link>
+              <Link
+                to="/orders"
+                onClick={() => setMobileOpen(false)}
+                className="block text-sm font-medium text-gray-700 hover:text-red-500"
+              >
+                Orders
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="block text-left w-full text-sm font-medium text-gray-700 hover:text-red-500"
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-100 text-center text-xs text-gray-400">
+          © {new Date().getFullYear()} LSH
+        </div>
+      </motion.aside>
+    </>
+  )}
+</AnimatePresence>
+
     </motion.header>
   );
 }

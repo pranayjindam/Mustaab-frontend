@@ -341,7 +341,7 @@ export default function HomePage() {
 
                 {/* Product List */}
                 <ProductList
-                  title={category.name}
+                 
                   products={categoryProducts}
                 />
 
