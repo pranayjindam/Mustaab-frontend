@@ -37,7 +37,13 @@ import Store from "./client/pages/StorePage.jsx";
 import BarcodeScanner from "./admin/pages/BarCodeScanner.jsx";
 import BarcodeCameraScanner from "./admin/pages/BarCodeCameraScanner.jsx";
 import ProductForm from "./admin/pages/Product/ProductForm.jsx";
+import { BrowserRouter } from "react-router-dom";
 
+root.render(
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
+);
 // ===== Protected Route (Redux) =====
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const user = useSelector((state) => state.auth.user);
