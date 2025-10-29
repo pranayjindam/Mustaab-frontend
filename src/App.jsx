@@ -62,6 +62,10 @@ const RedirectIfLoggedIn = ({ children }) => {
 
 export default function App() {
    const [showLoader, setShowLoader] = useState(false);
+   window.onpopstate = () => {
+  window.history.back();
+};
+
   useEffect(() => {
     // Check if loader has already been shown in this session
     const hasVisited = sessionStorage.getItem("hasVisited");
@@ -95,6 +99,7 @@ export default function App() {
           </RedirectIfLoggedIn>
         }
       />
+
       <Route path="/product/:id" element={<ProductDetailsPage />} />
       <Route path="/store" element={<Store />} /> {/* ✅ add this line */}
       <Route path="/search/:keyword" element={<SearchPage />} />
