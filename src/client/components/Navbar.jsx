@@ -556,7 +556,7 @@ console.log("suggestions:",suggestions);
                   >
                     <Link
                       to="/register"
-                      className="px-3 lg:px-4 py-1.5 bg-red-500 text-white text-xs lg:text-sm font-medium rounded-full hover:bg-red-600 transition-colors"
+                      className="nav-link text-gray-700 text-xs lg:text-sm font-medium hover:text-red-500"
                     >
                       Register
                     </Link>

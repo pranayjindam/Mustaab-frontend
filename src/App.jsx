@@ -14,7 +14,6 @@ import Checkout from "./client/pages/checkout/Checkout.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import SearchPage from "./client/pages/SearchPage.jsx";
 import InitialLoader from "./client/components/InitialLoader.jsx";
-import ChatbotLauncher from "./client/components/ChatbotLauncher.jsx";
 import ProductFormWrapper from "./admin/pages/Product/ProductFormWrapper.jsx";
 // ===== Admin Pages =====
 import DashboardLayout from "./admin/pages/Dashboard.jsx";
@@ -295,7 +294,6 @@ export default function App() {
       {/* ===== Fallback ===== */}
       <Route path="*" element={<Navigate to="/" />} />
   </Routes>
-      <ChatbotLauncher/>
   </>
       )}
     </>
