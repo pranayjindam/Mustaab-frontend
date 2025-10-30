@@ -39,11 +39,6 @@ import BarcodeCameraScanner from "./admin/pages/BarCodeCameraScanner.jsx";
 import ProductForm from "./admin/pages/Product/ProductForm.jsx";
 import { BrowserRouter } from "react-router-dom";
 
-root.render(
-  <BrowserRouter>
-    <App />
-  </BrowserRouter>
-);
 // ===== Protected Route (Redux) =====
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const user = useSelector((state) => state.auth.user);
@@ -68,9 +63,6 @@ const RedirectIfLoggedIn = ({ children }) => {
 
 export default function App() {
    const [showLoader, setShowLoader] = useState(false);
-   window.onpopstate = () => {
-  window.history.back();
-};
 
   useEffect(() => {
     // Check if loader has already been shown in this session
