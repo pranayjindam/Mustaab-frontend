@@ -1,5 +1,5 @@
 // scripts/generate-sitemap.js
-const fs = require('fs');
+import fs from 'fs';
 const { SitemapStream, streamToPromise } = require('sitemap');
 
 const siteUrl = 'https://laxmisareehouse.com';
