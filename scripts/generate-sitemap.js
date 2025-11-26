@@ -1,6 +1,6 @@
 // scripts/generate-sitemap.js
 import fs from 'fs';
-const { SitemapStream, streamToPromise } = require('sitemap');
+import { SitemapStream, streamToPromise } from 'sitemap';
 
 const siteUrl = 'https://laxmisareehouse.com';
 const API_BASE = process.env.API_BASE || 'https://api.laxmisareehouse.com'; // set in Vercel env
