@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Home -->
+  <url>
+    <loc>https://laxmisareehouse.com/</loc>
+    <lastmod>2025-11-26</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Category / main pages -->
+  <url><loc>https://laxmisareehouse.com/women</loc><lastmod>2025-11-26</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://laxmisareehouse.com/men</loc><lastmod>2025-11-26</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://laxmisareehouse.com/kids</loc><lastmod>2025-11-26</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://laxmisareehouse.com/beauty</loc><lastmod>2025-11-26</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://laxmisareehouse.com/ornaments</loc><lastmod>2025-11-26</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+
+  <!-- Client pages -->
+  <url><loc>https://laxmisareehouse.com/store</loc><lastmod>2025-11-26</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://laxmisareehouse.com/search/example-keyword</loc><lastmod>2025-11-26</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://laxmisareehouse.com/cart</loc><lastmod>2025-11-26</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://laxmisareehouse.com/wishlist</loc><lastmod>2025-11-26</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://laxmisareehouse.com/checkout</loc><lastmod>2025-11-26</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://laxmisareehouse.com/login</loc><lastmod>2025-11-26</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://laxmisareehouse.com/register</loc><lastmod>2025-11-26</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://laxmisareehouse.com/profile</loc><lastmod>2025-11-26</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://laxmisareehouse.com/orders</loc><lastmod>2025-11-26</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://laxmisareehouse.com/addresses</loc><lastmod>2025-11-26</lastmod><changefreq>monthly</changefreq><priority>0.4</priority></url>
+
+  <!-- Info pages -->
+  <url><loc>https://laxmisareehouse.com/privacy-policy</loc><lastmod>2025-11-26</lastmod><changefreq>yearly</changefreq><priority>0.2</priority></url>
+  <url><loc>https://laxmisareehouse.com/terms-service</loc><lastmod>2025-11-26</lastmod><changefreq>yearly</changefreq><priority>0.2</priority></url>
+  <url><loc>https://laxmisareehouse.com/shipping-delivery</loc><lastmod>2025-11-26</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://laxmisareehouse.com/returns</loc><lastmod>2025-11-26</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://laxmisareehouse.com/help</loc><lastmod>2025-11-26</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
+
+  <!-- Products (from the JSON you provided) -->
+  <url>
+    <loc>https://laxmisareehouse.com/product/68fca8ae246cb57c6e8d3412</loc>
+    <lastmod>2025-10-31T16:19:35.125Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://laxmisareehouse.com/product/68d8e1e041dfa0683d66c5ab</loc>
+    <lastmod>2025-10-19T09:56:14.552Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://laxmisareehouse.com/product/68d8e16641dfa0683d66c5a2</loc>
+    <lastmod>2025-10-14T09:43:26.060Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+</urlset>

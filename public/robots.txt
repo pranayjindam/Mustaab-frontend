@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://laxmisareehouse.com/sitemap.xml
+
+# Prevent indexing of admin and internal routes
+Disallow: /admin
+Disallow: /api
+Disallow: /admin/
+Disallow: /admin/*
+
+# Add any additional private paths below:
+# Disallow: /private
