@@ -1026,7 +1026,7 @@ console.log("suggestions:",suggestions);
         </div>
 
         {/* Links */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {navigation.categories.map((cat) => (
             <div key={cat.id}>
               <h3 className="text-sm font-semibold text-gray-700 mb-2">
@@ -1099,7 +1099,7 @@ console.log("suggestions:",suggestions);
               </button>
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* Footer */}
         <div className="p-4 border-t border-gray-100 text-center text-xs text-gray-400">
