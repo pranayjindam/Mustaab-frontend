@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Image, Plus, Pencil, Trash2, X } from "lucide-react";
 import {
   useGetCarouselImagesQuery,
@@ -8,168 +8,234 @@ import {
 } from "../../redux/api/carouselApi";
 
 export default function CarouselPage() {
-  const { data, isLoading } = useGetCarouselImagesQuery();
+  const { data, isLoading: isFetching } = useGetCarouselImagesQuery();
   const carousels = data?.data || [];
 
-  const [addCarouselImage] = useAddCarouselImageMutation();
-  const [updateCarouselImage] = useUpdateCarouselImageMutation();
-  const [deleteCarouselImage] = useDeleteCarouselImageMutation();
+  const [addCarouselImage, { isLoading: isAdding }] = useAddCarouselImageMutation();
+  const [updateCarouselImage, { isLoading: isUpdating }] = useUpdateCarouselImageMutation();
+  const [deleteCarouselImage, { isLoading: isDeleting }] = useDeleteCarouselImageMutation();
 
-  const [newImage, setNewImage] = useState("");
+  const [newFile, setNewFile] = useState(null);
+  const [newImageUrlPreview, setNewImageUrlPreview] = useState("");
+  const [newRedirectUrl, setNewRedirectUrl] = useState("");
   const [hoveredId, setHoveredId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
-  if (isLoading) {
+  const [updatingItem, setUpdatingItem] = useState(null);
+  const updateFileRef = useRef();
+
+  const onChooseFile = (e) => {
+    const f = e.target.files?.[0] || null;
+    setNewFile(f);
+    if (f) setNewImageUrlPreview(URL.createObjectURL(f));
+    else setNewImageUrlPreview("");
+  };
+
+  const resetAddForm = () => {
+    setNewFile(null);
+    setNewImageUrlPreview("");
+    setNewRedirectUrl("");
+    const el = document.getElementById("carousel-file-input");
+    if (el) el.value = "";
+  };
+
+  const handleAdd = async () => {
+    try {
+      if (!newFile) return alert("Please choose an image file to upload.");
+
+      const fd = new FormData();
+      fd.append("image", newFile);
+      if (newRedirectUrl?.trim()) fd.append("redirectUrl", newRedirectUrl.trim());
+
+      await addCarouselImage(fd).unwrap();
+      resetAddForm();
+    } catch (err) {
+      console.error("Add failed:", err);
+      alert(err?.data?.message || err?.message || "Upload failed");
+    }
+  };
+
+  const openUpdateDialog = (item) => {
+    setUpdatingItem({ id: item._id, redirectUrl: item.redirectUrl || "" });
+    if (updateFileRef.current) updateFileRef.current.value = "";
+  };
+
+  const handleUpdateSubmit = async () => {
+    if (!updatingItem) return;
+    try {
+      const fd = new FormData();
+      const fileInput = updateFileRef.current;
+      const chosen = fileInput?.files?.[0];
+      if (chosen) fd.append("image", chosen);
+      fd.append("redirectUrl", updatingItem.redirectUrl || "");
+
+      await updateCarouselImage({ id: updatingItem.id, data: fd }).unwrap();
+      setUpdatingItem(null);
+    } catch (err) {
+      console.error("Update failed:", err);
+      alert(err?.data?.message || err?.message || "Update failed");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this image?")) return;
+    try {
+      setDeletingId(id);
+      await deleteCarouselImage(id).unwrap();
+      setDeletingId(null);
+    } catch (err) {
+      console.error("Delete failed:", err);
+      setDeletingId(null);
+      alert(err?.data?.message || err?.message || "Delete failed");
+    }
+  };
+
+  if (isFetching) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
-          <p className="mt-4 text-slate-600 font-medium">
-            Loading carousel images...
-          </p>
+          <div className="inline-block rounded-full h-12 w-12 border-4 border-gray-300 border-t-transparent" />
+          <p className="mt-4 text-gray-700 font-medium">Loading carousel images...</p>
         </div>
       </div>
     );
   }
 
-  const handleAdd = async () => {
-    if (!newImage.trim()) return;
-    await addCarouselImage({ image: newImage, path: "/carousel" });
-    setNewImage("");
-  };
-
-  const handleUpdate = async (id) => {
-    const updatedUrl = prompt("Enter new image URL:");
-    if (!updatedUrl) return;
-    await updateCarouselImage({ id, image: updatedUrl, path: "/carousel" });
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this image?")) {
-      setDeletingId(id);
-      await deleteCarouselImage(id);
-      setTimeout(() => setDeletingId(null), 300);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
+    <div className="min-h-screen bg-white p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-8 animate-fade-in">
+        <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-600 rounded-lg shadow-lg">
-              <Image className="w-6 h-6 text-white" />
+            <div className="p-2 bg-gray-700 rounded-lg">
+              <Image className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Carousel Manager
-            </h1>
+            <h1 className="text-2xl font-semibold text-gray-900">Carousel Manager</h1>
           </div>
-          <p className="text-slate-600 ml-14">
-            Manage your homepage carousel images with ease
-          </p>
+          <p className="text-gray-600">Manage homepage carousel images</p>
         </div>
 
         {/* Add Image Section */}
-        <div className="mb-8 animate-slide-up">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 hover:shadow-2xl transition-shadow duration-300">
-            <label className="block text-sm font-semibold text-slate-700 mb-3">
-              Add New Carousel Image
-            </label>
-            <div className="flex gap-3">
-              <div className="flex-1 relative group">
-                <input
-                  className="w-full border-2 border-slate-200 rounded-xl p-3 pl-4 pr-10 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all duration-300"
-                  placeholder="Enter image URL..."
-                  value={newImage}
-                  onChange={(e) => setNewImage(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                />
-                {newImage && (
-                  <button
-                    onClick={() => setNewImage("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                )}
+        <div className="mb-8">
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <label className="block text-sm font-medium text-gray-700 mb-3">Add New Carousel Image</label>
+
+            <div className="flex gap-3 items-center">
+              <div className="flex items-center gap-3 flex-1">
+                <label className="flex items-center gap-3 w-full">
+                  <input
+                    id="carousel-file-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={onChooseFile}
+                    className="hidden"
+                  />
+                  <div className="w-full">
+                    <input
+                      className="w-full border border-gray-200 rounded-md p-3 focus:outline-none"
+                      placeholder="Choose an image file..."
+                      value={newFile ? newFile.name : ""}
+                      readOnly
+                      onClick={() => document.getElementById("carousel-file-input")?.click()}
+                    />
+                    {newImageUrlPreview && (
+                      <button
+                        onClick={() => {
+                          setNewFile(null);
+                          setNewImageUrlPreview("");
+                          const el = document.getElementById("carousel-file-input");
+                          if (el) el.value = "";
+                        }}
+                        className="text-gray-600 text-sm mt-2"
+                      >
+                        Remove file
+                      </button>
+                    )}
+                  </div>
+                </label>
               </div>
+
+              <input
+                className="border border-gray-200 rounded-md p-3 w-80"
+                placeholder="Redirect URL (optional)"
+                value={newRedirectUrl}
+                onChange={(e) => setNewRedirectUrl(e.target.value)}
+              />
+
               <button
                 onClick={handleAdd}
-                disabled={!newImage}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-slate-300 disabled:to-slate-400 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-2 disabled:cursor-not-allowed disabled:transform-none"
+                disabled={!newFile || isAdding}
+                className="bg-gray-800 text-white px-4 py-2 rounded-md"
               >
-                <Plus className="w-5 h-5" />
-                Add Image
+                {isAdding ? "Uploading..." : (
+                  <span className="inline-flex items-center gap-2"><Plus className="w-4 h-4" /> Upload</span>
+                )}
               </button>
             </div>
+
+            {/* Preview */}
+            {newImageUrlPreview && (
+              <div className="mt-4">
+                <p className="text-xs text-gray-500 mb-2">Preview</p>
+                <div className="w-64 h-36 rounded-md overflow-hidden shadow-sm">
+                  <img src={newImageUrlPreview} alt="preview" className="w-full h-full object-cover" />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Images Grid */}
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-slate-700 mb-4">
-            Current Images ({carousels.length})
-          </h2>
+        <div>
+          <h2 className="text-lg font-medium text-gray-800 mb-4">Current Images ({carousels.length})</h2>
 
           {carousels.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-12 text-center">
-              <div className="inline-block p-4 bg-slate-100 rounded-full mb-4">
-                <Image className="w-12 h-12 text-slate-400" />
+            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+              <div className="inline-block p-4 bg-gray-50 rounded-full mb-4">
+                <Image className="w-10 h-10 text-gray-400" />
               </div>
-              <p className="text-slate-500 text-lg">No carousel images yet</p>
-              <p className="text-slate-400 text-sm mt-2">
-                Add your first image to get started
-              </p>
+              <p className="text-gray-600 text-lg">No carousel images yet</p>
+              <p className="text-gray-400 text-sm mt-2">Add your first image to get started</p>
             </div>
           ) : (
             <ul className="space-y-3">
-              {carousels.map((c, index) => (
+              {carousels.map((c) => (
                 <li
                   key={c._id}
                   onMouseEnter={() => setHoveredId(c._id)}
                   onMouseLeave={() => setHoveredId(null)}
-                  className={`group bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden hover:shadow-2xl transition-all duration-300 ${
-                    deletingId === c._id
-                      ? "animate-slide-out"
-                      : "animate-slide-in"
-                  }`}
-                  style={{ animationDelay: `${index * 50}ms` }}
+                  className="bg-white rounded-lg border border-gray-200 overflow-hidden"
                 >
                   <div className="flex items-center gap-4 p-4">
-                    {/* Image Preview */}
-                    <div className="relative flex-shrink-0 overflow-hidden rounded-xl shadow-md group-hover:shadow-xl transition-shadow duration-300">
-                      <img
-                        src={c.image}
-                        alt=""
-                        className="h-24 w-40 object-cover transform group-hover:scale-110 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="flex-shrink-0 overflow-hidden rounded-md">
+                      <img src={c.image} alt="" className="h-24 w-40 object-cover" />
                     </div>
 
-                    {/* URL Display */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-700 truncate">
-                        {c.image}
-                      </p>
-                      <p className="text-xs text-slate-400 mt-1">ID: {c._id}</p>
+                      <p className="text-sm font-medium text-gray-700 truncate">{c.image}</p>
+                      <p className="text-xs text-gray-500 mt-1">ID: {c._id}</p>
+                      <p className="text-xs text-gray-500 mt-1">Redirect: {c.redirectUrl || "-"}</p>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-4 group-hover:translate-x-0">
+                    <div className="flex gap-2">
                       <button
-                        onClick={() => handleUpdate(c._id)}
-                        className="bg-amber-500 hover:bg-amber-600 text-white p-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-110 active:scale-95 transition-all duration-200"
+                        onClick={() => openUpdateDialog(c)}
                         title="Update image"
+                        className="bg-yellow-500 text-white px-3 py-2 rounded-md"
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
+
                       <button
                         onClick={() => handleDelete(c._id)}
-                        className="bg-red-500 hover:bg-red-600 text-white p-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-110 active:scale-95 transition-all duration-200"
                         title="Delete image"
+                        className="bg-red-600 text-white px-3 py-2 rounded-md"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        {isDeleting && deletingId === c._id ? (
+                          <span className="inline-block w-4 h-4 border-2 border-white rounded-full border-t-transparent" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -180,57 +246,31 @@ export default function CarouselPage() {
         </div>
       </div>
 
-      {/* Animations */}
-      <style >{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes slide-up {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes slide-in {
-          from {
-            opacity: 0;
-            transform: translateX(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        @keyframes slide-out {
-          to {
-            opacity: 0;
-            transform: translateX(20px);
-          }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.5s ease-out;
-        }
-        .animate-slide-up {
-          animation: slide-up 0.6s ease-out;
-        }
-        .animate-slide-in {
-          animation: slide-in 0.4s ease-out backwards;
-        }
-        .animate-slide-out {
-          animation: slide-out 0.3s ease-out forwards;
-        }
-      `}</style>
+      {/* Update Modal (simple, no animations) */}
+      {updatingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md border border-gray-200">
+            <h3 className="text-lg font-medium mb-4">Update Carousel Image</h3>
+
+            <label className="block text-sm text-gray-600 mb-2">Replace Image (optional)</label>
+            <input type="file" accept="image/*" ref={updateFileRef} className="mb-3" />
+
+            <label className="block text-sm text-gray-600 mb-2">Redirect URL</label>
+            <input
+              value={updatingItem.redirectUrl}
+              onChange={(e) => setUpdatingItem({ ...updatingItem, redirectUrl: e.target.value })}
+              className="w-full border border-gray-200 rounded-md p-3 mb-4"
+            />
+
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setUpdatingItem(null)} className="px-4 py-2 rounded-md bg-gray-100">Cancel</button>
+              <button onClick={handleUpdateSubmit} disabled={isUpdating} className="px-4 py-2 rounded-md bg-yellow-500 text-white">
+                {isUpdating ? "Updating..." : "Update"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

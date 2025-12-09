@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useGetCartQuery } from "../../../redux/api/cartApi";
 import {
-  usePlaceOrderMutation,
   useCreateRazorpayOrderMutation,
   useVerifyRazorpayPaymentMutation,
-  useCodRequestOtpMutation,
-  useCodVerifyOtpMutation,
 } from "../../../redux/api/orderApi";
 import Loader from "../../../components/Loader";
 import AddressComponent from "./AddressComponent";
@@ -22,18 +19,8 @@ export default function Checkout() {
   const token = useSelector((state) => state.auth?.token);
   const selectedAddress = useSelector((state) => state.address.selectedAddress);
 
-  const [paymentMethod, setPaymentMethod] = useState("razorpay");
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [mobile, setMobile] = useState("");
-
-  const [placeOrder] = usePlaceOrderMutation();
   const [createRazorpayOrder] = useCreateRazorpayOrderMutation();
   const [verifyRazorpayPayment] = useVerifyRazorpayPaymentMutation();
-
-  // ✅ RTK Query COD OTP hooks
-  const [codRequestOtp, { isLoading: otpLoading }] = useCodRequestOtpMutation();
-  const [codVerifyOtp, { isLoading: verifyLoading }] = useCodVerifyOtpMutation();
 
   useEffect(() => {
     if (!token) navigate("/login");
@@ -68,58 +55,10 @@ export default function Checkout() {
     0
   );
 
-  // ---------------- COD OTP Functions ---------------- //
-  const handleSendOtp = async () => {
-    if (!shippingAddress) return alert("Please select a shipping address");
-    const mobileNumber = shippingAddress.phoneNumber;
-    setMobile(mobileNumber);
-
-    try {
-      const res = await codRequestOtp({ mobile: mobileNumber }).unwrap();
-      if (res.success) {
-        alert("OTP sent to your mobile number");
-        setOtpSent(true);
-      } else {
-        alert(res.message || "Failed to send OTP");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Error sending OTP");
-    }
-  };
-
-const handleVerifyOtp = async () => {
-  if (!shippingAddress) return alert("Please select a shipping address");
-
-  try {
-    const res = await codVerifyOtp({
-      mobile,
-      otp,
-      orderItems: formattedItems,
-      shippingAddress,
-      totalPrice,
-      token,
-    }).unwrap();
-
-    if (res.success) {
-      alert("COD Order placed successfully!");
-      navigate(`/orders/success/${res.order._id}`);
-    } else {
-      alert(res.message || "Invalid OTP");
-    }
-  } catch (err) {
-    console.error("❌ Verify OTP error:", err);
-    alert(err?.data?.message || "Failed to verify OTP");
-  }
-};
-
-
-
-  // Mask mobile number dynamically to show only last 2 digits
-  const maskedMobile = mobile ? mobile.replace(/\d(?=\d{2})/g, "*") : "";
-
   // ---------------- Razorpay Payment ---------------- //
   const handleRazorpayPayment = async () => {
+    if (!shippingAddress) return alert("Please select a shipping address");
+
     try {
       const razorpayOrder = await createRazorpayOrder({
         amount: Math.round(totalPrice * 100),
@@ -172,11 +111,8 @@ const handleVerifyOtp = async () => {
 
   // ---------------- Handle Place Order ---------------- //
   const handlePlaceOrder = async () => {
-    if (paymentMethod === "COD") {
-      handleSendOtp();
-    } else {
-      handleRazorpayPayment();
-    }
+    // directly open Razorpay payment popup
+    handleRazorpayPayment();
   };
 
   return (
@@ -188,26 +124,7 @@ const handleVerifyOtp = async () => {
 
         <div className="my-4">
           <h2 className="font-semibold mb-2">Payment Method</h2>
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="COD"
-              checked={paymentMethod === "COD"}
-              onChange={() => setPaymentMethod("COD")}
-            />
-            Cash on Delivery
-          </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="razorpay"
-              checked={paymentMethod === "razorpay"}
-              onChange={() => setPaymentMethod("razorpay")}
-            />
-            Pay Now (Razorpay)
-          </label>
+          <p className="text-sm text-gray-600">Pay securely using Razorpay (UPI, Card, Netbanking).</p>
         </div>
 
         {/* Product List */}
@@ -237,43 +154,9 @@ const handleVerifyOtp = async () => {
             className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600"
             onClick={handlePlaceOrder}
           >
-            {paymentMethod === "COD" ? "Place COD Order" : "Pay with Razorpay"}
+            Pay Now
           </button>
         </div>
-
-        {/* OTP Input Popup */}
-        {otpSent && (
-          <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-96 text-center">
-              <h2 className="text-lg font-semibold mb-3">
-                Enter OTP sent to {maskedMobile}
-              </h2>
-              <input
-                type="text"
-                maxLength={6}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                className="border p-2 rounded w-full text-center tracking-widest text-lg mb-3"
-                placeholder="Enter 6-digit OTP"
-              />
-              <div className="flex justify-between">
-                <button
-                  onClick={handleVerifyOtp}
-                  disabled={verifyLoading}
-                  className="bg-green-500 text-white px-4 py-2 rounded"
-                >
-                  Verify & Place Order
-                </button>
-                <button
-                  onClick={() => setOtpSent(false)}
-                  className="bg-gray-300 px-4 py-2 rounded"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </>
   );

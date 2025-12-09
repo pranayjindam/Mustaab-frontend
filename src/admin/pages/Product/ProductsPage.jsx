@@ -1,46 +1,35 @@
-// AdminProductPage.jsx - Product list with create modal
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+// src/admin/pages/AdminProductPage.jsx
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   useGetAllProductsQuery,
   useDeleteProductMutation,
 } from "../../../redux/api/productApi";
-import { Plus, Edit, Trash2, Eye, Search } from "lucide-react";
 import ProductForm from "./ProductForm";
 
 export default function AdminProductPage() {
   const navigate = useNavigate();
-  const { data, isLoading } = useGetAllProductsQuery();
-  const [deleteProduct] = useDeleteProductMutation();
+  const { data, isLoading, isError } = useGetAllProductsQuery();
+  const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
+
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
-        >
-          <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">Loading products...</p>
-        </motion.div>
-      </div>
-    );
-  }
+  const products = data?.products || [];
 
   const handleDelete = async (id, e) => {
-    e.stopPropagation();
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      try {
+    e?.stopPropagation();
+    if (!window.confirm("Are you sure you want to delete this product?")) return;
+    try {
+      if (deleteProduct?.unwrap) {
+        await deleteProduct(id).unwrap();
+      } else {
         await deleteProduct(id);
-        alert("Product deleted successfully!");
-      } catch (error) {
-        console.error(error);
-        alert("Failed to delete product");
       }
+      alert("Product deleted successfully!");
+    } catch (err) {
+      console.error("Delete failed", err);
+      alert("Failed to delete product");
     }
   };
 
@@ -49,258 +38,185 @@ export default function AdminProductPage() {
   };
 
   const handleEdit = (product, e) => {
-    e.stopPropagation();
+    e?.stopPropagation();
     navigate(`/admin/products/edit/${product._id}`);
   };
 
-  const filteredProducts = data?.products?.filter((product) => {
-    const searchLower = searchTerm.toLowerCase();
+  const filteredProducts = useMemo(() => {
+    const q = (searchTerm || "").trim().toLowerCase();
+    if (!q) return products;
+    return products.filter((product) => {
+      const title = product.title || "";
+      const main = product.category?.main?.name || "";
+      const sub = product.category?.sub?.name || "";
+      const type = product.category?.type?.name || "";
+      return (
+        title.toLowerCase().includes(q) ||
+        main.toLowerCase().includes(q) ||
+        sub.toLowerCase().includes(q) ||
+        type.toLowerCase().includes(q)
+      );
+    });
+  }, [products, searchTerm]);
+
+  if (isLoading) {
     return (
-      product.title?.toLowerCase().includes(searchLower) ||
-      product.category.main?.name?.toLowerCase().includes(searchLower) ||
-      product.category.sub?.name?.toLowerCase().includes(searchLower) ||
-      product.category.type?.name?.toLowerCase().includes(searchLower)
+      <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-gray-300 rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-gray-600">Loading products...</p>
+        </div>
+      </div>
     );
-  });
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
+        <p className="text-red-600">Failed to load products.</p>
+      </div>
+    );
+  }
 
   return (
-    <motion.div
-      className="p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-slate-50 to-indigo-50 min-h-screen"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      <style>{`
-        @keyframes shimmer {
-          0% { background-position: -1000px 0; }
-          100% { background-position: 1000px 0; }
-        }
-
-        .shimmer-bg {
-          background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(255, 255, 255, 0.3),
-            transparent
-          );
-          background-size: 200% 100%;
-          animation: shimmer 2s infinite;
-        }
-
-        .table-hover-row:hover {
-          background: linear-gradient(90deg, #f8fafc 0%, #eef2ff 100%);
-        }
-      `}</style>
-
-      {/* Header */}
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="mb-6 sm:mb-8"
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div className="min-h-screen p-6 bg-gray-50">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-              Products
-            </h1>
-            <p className="text-gray-600 text-sm">
-              Manage your product inventory
+            <h1 className="text-2xl font-semibold text-gray-900">Products</h1>
+            <p className="text-sm text-gray-600">Manage your product inventory</p>
+          </div>
+
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="relative flex-1 md:flex-none">
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search products by title, category..."
+                className="w-full pl-3 pr-3 py-2 border rounded-md bg-white text-sm"
+                aria-label="Search products"
+              />
+            </div>
+
+            <button
+              onClick={() => setShowForm(true)}
+              className="px-4 py-2 bg-gray-900 text-white rounded-md text-sm"
+              aria-label="Add product"
+            >
+              + Add Product
+            </button>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white border border-gray-200 rounded-md p-4">
+            <p className="text-xs text-gray-500">Total Products</p>
+            <p className="text-xl font-bold text-gray-900">{products.length}</p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-md p-4">
+            <p className="text-xs text-gray-500">In Stock</p>
+            <p className="text-xl font-bold text-green-600">
+              {products.filter((p) => (p.stock ?? 0) > 0).length}
             </p>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.97 }}
-            className="flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
-            onClick={() => setShowForm(true)}
-          >
-            <Plus size={20} /> Add Product
-          </motion.button>
+          <div className="bg-white border border-gray-200 rounded-md p-4">
+            <p className="text-xs text-gray-500">Out of Stock</p>
+            <p className="text-xl font-bold text-red-600">
+              {products.filter((p) => (p.stock ?? 0) === 0).length}
+            </p>
+          </div>
         </div>
 
-        {/* Search Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="relative"
-        >
-          <Search
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-            size={20}
-          />
-          <input
-            type="text"
-            placeholder="Search products by title, category..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none transition-all bg-white"
-          />
-        </motion.div>
-      </motion.div>
-
-      {/* Stats Cards */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6"
-      >
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-600 mb-1">Total Products</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {data?.products?.length || 0}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-600 mb-1">In Stock</p>
-          <p className="text-2xl font-bold text-green-600">
-            {data?.products?.filter((p) => p.stock > 0).length || 0}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-600 mb-1">Out of Stock</p>
-          <p className="text-2xl font-bold text-red-600">
-            {data?.products?.filter((p) => p.stock === 0).length || 0}
-          </p>
-        </div>
-      </motion.div>
-
-      {/* Table */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-        className="overflow-hidden bg-white rounded-2xl shadow-lg border border-gray-200"
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+        {/* Table */}
+        <div className="bg-white border border-gray-200 rounded-md overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-100">
               <tr>
-                {[
-                  "Title",
-                  "Main",
-                  "Sub",
-                  "Type",
-                  "Price",
-                  "Stock",
-                  "Actions",
-                ].map((heading) => (
-                  <th
-                    key={heading}
-                    className="p-4 text-left font-semibold text-sm tracking-wide"
-                  >
-                    {heading}
-                  </th>
-                ))}
+                <th className="p-3 text-left font-medium">Title</th>
+                <th className="p-3 text-left font-medium">Main</th>
+                <th className="p-3 text-left font-medium">Sub</th>
+                <th className="p-3 text-left font-medium">Type</th>
+                <th className="p-3 text-left font-medium">Price</th>
+                <th className="p-3 text-left font-medium">Stock</th>
+                <th className="p-3 text-center font-medium">Actions</th>
               </tr>
             </thead>
+
             <tbody>
-              {filteredProducts?.length > 0 ? (
-                filteredProducts.map((p, index) => (
-                  <motion.tr
+              {filteredProducts.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="p-8 text-center text-gray-500">
+                    <div className="text-3xl mb-2">📦</div>
+                    <div className="font-semibold">No products found</div>
+                    <div className="text-sm text-gray-500">Try adjusting your search or add a new product</div>
+                  </td>
+                </tr>
+              ) : (
+                filteredProducts.map((p) => (
+                  <tr
                     key={p._id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.05 * index }}
-                    className="border-t border-gray-200 table-hover-row transition-all cursor-pointer"
+                    className="border-t cursor-pointer hover:bg-gray-50"
                     onClick={() => handleProductClick(p._id)}
                   >
-                    <td className="p-4 text-sm font-medium text-gray-900">
-                      {p.title}
-                    </td>
-                    <td className="p-4 text-sm text-gray-700">
-                      {p.category.main?.name || "-"}
-                    </td>
-                    <td className="p-4 text-sm text-gray-700">
-                      {p.category.sub?.name || "-"}
-                    </td>
-                    <td className="p-4 text-sm text-gray-700">
-                      {p.category.type?.name || "-"}
-                    </td>
-                    <td className="p-4 text-sm font-semibold text-indigo-600">
-                      ₹{p.price}
-                    </td>
-                    <td className="p-4 text-sm">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          p.stock > 10
-                            ? "bg-green-100 text-green-700"
-                            : p.stock > 0
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {p.stock}
+                    <td className="p-3 align-middle">{p.title}</td>
+                    <td className="p-3 align-middle">{p.category?.main?.name || "-"}</td>
+                    <td className="p-3 align-middle">{p.category?.sub?.name || "-"}</td>
+                    <td className="p-3 align-middle">{p.category?.type?.name || "-"}</td>
+                    <td className="p-3 align-middle font-semibold text-indigo-600">₹{p.price}</td>
+                    <td className="p-3 align-middle">
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        (p.stock ?? 0) > 10 ? "bg-green-100 text-green-700" :
+                        (p.stock ?? 0) > 0 ? "bg-yellow-100 text-yellow-700" :
+                        "bg-red-100 text-red-700"
+                      }`}>
+                        {p.stock ?? 0}
                       </span>
                     </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          className="p-2 bg-indigo-100 text-indigo-600 rounded-lg hover:bg-indigo-200 transition-colors"
+
+                    <td className="p-3 text-center align-middle">
+                      <div className="inline-flex gap-2">
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleProductClick(p._id);
                           }}
-                          title="View Details"
+                          className="px-2 py-1 border rounded text-sm bg-white"
+                          title="View"
                         >
-                          <Eye size={16} />
-                        </motion.button>
+                          View
+                        </button>
 
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          className="p-2 bg-amber-100 text-amber-600 rounded-lg hover:bg-amber-200 transition-colors"
+                        <button
                           onClick={(e) => handleEdit(p, e)}
-                          title="Edit Product"
+                          className="px-2 py-1 border rounded text-sm bg-white"
+                          title="Edit"
                         >
-                          <Edit size={16} />
-                        </motion.button>
+                          Edit
+                        </button>
 
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                        <button
                           onClick={(e) => handleDelete(p._id, e)}
-                          title="Delete Product"
+                          disabled={isDeleting}
+                          className="px-2 py-1 border rounded text-sm bg-white text-red-600 disabled:opacity-60"
+                          title="Delete"
                         >
-                          <Trash2 size={16} />
-                        </motion.button>
+                          Delete
+                        </button>
                       </div>
                     </td>
-                  </motion.tr>
+                  </tr>
                 ))
-              ) : (
-                <tr>
-                  <td colSpan="7" className="text-center text-gray-500 py-12">
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                    >
-                      <div className="text-5xl mb-4">📦</div>
-                      <p className="text-lg font-semibold">No products found</p>
-                      <p className="text-sm mt-1">
-                        Try adjusting your search or add a new product
-                      </p>
-                    </motion.div>
-                  </td>
-                </tr>
               )}
             </tbody>
           </table>
         </div>
-      </motion.div>
+      </div>
 
       {/* Product Form Modal */}
-      <AnimatePresence>
-        {showForm && (
-          <ProductForm
-            product={null}
-            onClose={() => setShowForm(false)}
-          />
-        )}
-      </AnimatePresence>
-    </motion.div>
+      {showForm && <ProductForm product={null} onClose={() => setShowForm(false)} />}
+    </div>
   );
 }

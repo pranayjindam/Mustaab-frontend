@@ -1,102 +1,108 @@
+// src/admin/pages/ReviewPage.jsx
 import React from "react";
-import {
-  useGetAllReviewsAdminQuery,
-  useDeleteReviewMutation,
-} from "../../redux/api/reviewsApi";
-import { Trash2, Star } from "lucide-react";
+import { useGetAllReviewsAdminQuery, useDeleteReviewMutation } from "../../redux/api/reviewsApi";
 
 export default function ReviewPage() {
   const { data, isLoading, isError } = useGetAllReviewsAdminQuery();
-  const [deleteReview] = useDeleteReviewMutation();
+  const [deleteReview, { isLoading: isDeleting }] = useDeleteReviewMutation();
 
   const reviews = data?.reviews || [];
-  console.log("All Reviews:", reviews);
+
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this review?")) {
-      await deleteReview(id);
+    if (!window.confirm("Are you sure you want to delete this review?")) return;
+    try {
+      // If your RTK mutation returns a promise with unwrap, use it.
+      if (deleteReview?.unwrap) {
+        await deleteReview(id).unwrap();
+      } else {
+        await deleteReview(id);
+      }
+      // Optional: show non-blocking notification here
+    } catch (err) {
+      console.error("Delete failed", err);
+      alert("Failed to delete review");
     }
   };
 
   if (isLoading)
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500 animate-pulse">Loading reviews...</p>
+        <p className="text-gray-500">Loading reviews...</p>
       </div>
     );
 
   if (isError)
     return (
-      <div className="flex items-center justify-center h-64 text-red-500">
+      <div className="flex items-center justify-center h-64 text-red-600">
         Error loading reviews.
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
-      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 p-6">
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-6xl mx-auto bg-white border border-gray-200 p-6 rounded-md">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Manage Reviews
-          </h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-2xl font-semibold text-gray-900">Manage Reviews</h1>
+          <p className="text-sm text-gray-600">
             Total Reviews: <strong>{reviews.length}</strong>
           </p>
         </div>
 
         {/* Reviews Table */}
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
-          <table className="min-w-full divide-y divide-slate-200 text-sm text-slate-700">
-            <thead className="bg-slate-100">
+        <div className="overflow-x-auto rounded-md border border-gray-200">
+          <table className="min-w-full text-sm text-gray-700">
+            <thead className="bg-gray-100">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold">User</th>
-                <th className="px-4 py-3 text-left font-semibold">Product</th>
-                <th className="px-4 py-3 text-left font-semibold">Rating</th>
-                <th className="px-4 py-3 text-left font-semibold">Comment</th>
-                <th className="px-4 py-3 text-center font-semibold">Action</th>
+                <th className="px-4 py-3 text-left font-medium">User</th>
+                <th className="px-4 py-3 text-left font-medium">Product</th>
+                <th className="px-4 py-3 text-left font-medium">Rating</th>
+                <th className="px-4 py-3 text-left font-medium">Comment</th>
+                <th className="px-4 py-3 text-center font-medium">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+
+            <tbody>
               {reviews.length > 0 ? (
                 reviews.map((r) => (
-                  <tr
-                    key={r._id}
-                    className="hover:bg-slate-50 transition-all duration-150"
-                  >
+                  <tr key={r._id} className="odd:bg-white even:bg-gray-50">
                     <td className="px-4 py-3 whitespace-nowrap">
-                      {r.user
-                        ? `${r.user.firstName || ""} ${r.user.lastName || ""}`
-                        : "N/A"}
+                      {r.user ? `${r.user.firstName || ""} ${r.user.lastName || ""}` : "N/A"}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {r.product ? r.product.name : "N/A"}
-                    </td>
+
+                    <td className="px-4 py-3 whitespace-nowrap">{r.product ? r.product.name : "N/A"}</td>
+
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-1 text-amber-500">
-                        {Array.from({ length: r.rating }).map((_, i) => (
-                          <Star key={i} size={16} fill="currentColor" />
-                        ))}
+                      <div className="flex items-center gap-1">
+                        {/* Simple star rendering using text characters to avoid extra icon bundles */}
+                        <span className="text-amber-500" aria-label={`Rating: ${r.rating} out of 5`}>
+                          {Array.from({ length: Math.max(0, Math.min(5, Math.round(r.rating || 0))) }).map((_, i) => (
+                            <span key={i}>★</span>
+                          ))}
+                        </span>
+                        <span className="text-gray-400 text-xs">({r.rating || 0})</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 max-w-xs truncate">
+
+                    <td className="px-4 py-3 max-w-xs truncate" title={r.review || ""}>
                       {r.review || "—"}
                     </td>
+
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => handleDelete(r._id)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all"
+                        className="bg-red-600 text-white px-3 py-2 rounded-md text-sm disabled:opacity-60"
+                        disabled={isDeleting}
+                        aria-label="Delete review"
                       >
-                        <Trash2 size={16} />
+                        Delete
                       </button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan="5"
-                    className="text-center py-6 text-slate-500 italic"
-                  >
+                  <td colSpan="5" className="text-center py-6 text-gray-500 italic">
                     No reviews found
                   </td>
                 </tr>

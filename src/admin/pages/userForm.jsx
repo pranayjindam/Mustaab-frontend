@@ -9,76 +9,95 @@ export default function UserForm({ user, onClose }) {
     role: "USER",
   });
 
-  const [updateUser] = useUpdateUserMutation();
+  const [updateUser, { isLoading }] = useUpdateUserMutation();
 
   useEffect(() => {
-    if (user) setForm({ ...user });
+    if (user) {
+      setForm({
+        name: user.name || "",
+        email: user.email || "",
+        mobile: user.mobile || "",
+        role: user.role || "USER",
+      });
+    }
   }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await updateUser({ id: user._id, ...form });
-    onClose();
+    try {
+      await updateUser({ id: user._id, ...form }).unwrap();
+      onClose();
+    } catch (err) {
+      alert("Update failed");
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-      <div className="bg-white p-6 rounded w-[400px]">
-        <h2 className="text-lg font-bold mb-4">{user ? "Edit User" : "Add User"}</h2>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
+      <div className="bg-white rounded-md p-5 w-full max-w-sm border border-gray-200">
+        <h2 className="text-lg font-semibold mb-4">
+          {user ? "Edit User" : "Add User"}
+        </h2>
 
         <form onSubmit={handleSubmit} className="space-y-3">
+
           <input
             name="name"
             value={form.name}
             onChange={handleChange}
             placeholder="Full Name"
-            className="border w-full p-2"
+            className="w-full border p-2 rounded text-sm"
             required
           />
+
           <input
             name="email"
             value={form.email}
             onChange={handleChange}
             placeholder="Email"
             type="email"
-            className="border w-full p-2"
+            className="w-full border p-2 rounded text-sm"
             required
           />
+
           <input
             name="mobile"
             value={form.mobile}
             onChange={handleChange}
             placeholder="Mobile"
-            className="border w-full p-2"
+            className="w-full border p-2 rounded text-sm"
           />
+
           <select
             name="role"
             value={form.role}
             onChange={handleChange}
-            className="border w-full p-2"
+            className="w-full border p-2 rounded text-sm"
           >
             <option value="USER">USER</option>
             <option value="ADMIN">ADMIN</option>
           </select>
 
-          <div className="flex justify-end gap-2 mt-4">
+          <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="bg-gray-400 text-white px-4 py-2 rounded"
+              className="px-4 py-2 text-sm bg-gray-300 rounded"
             >
               Cancel
             </button>
+
             <button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded"
+              className="px-4 py-2 text-sm bg-blue-600 text-white rounded disabled:opacity-50"
+              disabled={isLoading}
             >
-              Update
+              {isLoading ? "Updating..." : "Update"}
             </button>
           </div>
         </form>

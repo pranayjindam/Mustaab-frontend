@@ -41,30 +41,6 @@ export const orderApi = apiSlice.injectEndpoints({
       }),
     }),
 
-    // ------------------------
-    // COD OTP Endpoints
-    // ------------------------
-    codRequestOtp: builder.mutation({
-      query: ({ mobile }) => ({
-        url: "/orders/cod/request-otp",
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: { mobile },
-      }),
-    }),
-
-    codVerifyOtp: builder.mutation({
-      query: ({ mobile, otp, orderItems, shippingAddress, totalPrice, token }) => ({
-        url: "/orders/cod/verify-otp",
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: { mobile, otp, orderItems, shippingAddress, totalPrice },
-      }),
-      invalidatesTags: ["Orders"],
-    }),
 
     // ------------------------
     // Existing queries/mutations
