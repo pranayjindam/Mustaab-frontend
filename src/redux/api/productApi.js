@@ -1,51 +1,69 @@
 // redux/api/productApi.js
-import { apiSlice } from "./apiSlice"; // base apiSlice
+import { apiSlice } from "./apiSlice";
 
 export const productApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getAllProducts: builder.query({
       query: () => "/product",
-      providesTags: ["Product"]
+      providesTags: ["Product"],
     }),
+
     getProductById: builder.query({
       query: (id) => `/product/${id}`,
-      providesTags: ["Product"]
+      providesTags: ["Product"],
     }),
+
     getProductsByCategory: builder.query({
       query: (category) => `/product/category/${category}`,
-      providesTags: (result, error, category) => [{ type: "Product", id: category }]
+      providesTags: ["Product"],
     }),
+
     getProductByBarcode: builder.query({
       query: (barcode) => `/product/lookup/${barcode}`,
       providesTags: ["Product"],
     }),
-   // redux/api/productApi.js
-searchProducts: builder.query({
-  query: (keyword) => `/product/search/${keyword}`,
-  providesTags: ["Product"]
-}),
-getSearchSuggestions: builder.query({
-  query: (keyword) => `/product/search/suggestions?query=${keyword}`,
-}),
 
+    searchProducts: builder.query({
+      query: (keyword) => `/product/search/${keyword}`,
+      providesTags: ["Product"],
+    }),
+
+    getSearchSuggestions: builder.query({
+      query: (keyword) => `/product/search/suggestions?query=${keyword}`,
+    }),
+
+    /* ================= CREATE ================= */
     createProduct: builder.mutation({
-      query: (data) => ({ url: "/product/add", method: "POST", body: data }),
-      invalidatesTags: ["Product"]
+      query: (body) => ({
+        url: "/product/add",
+        method: "POST",
+        body,
+        formData: true, // ✅ REQUIRED
+      }),
+      invalidatesTags: ["Product"],
     }),
- updateProduct: builder.mutation({
-  query: ({ id, body }) => ({
-    url: `/product/${id}`,
-    method: "PUT",
-    body, // ✅ send FormData directly
-  }),
-  invalidatesTags: ["Product"],
-}),
 
+    /* ================= UPDATE ================= */
+    updateProduct: builder.mutation({
+      query: ({ id, body }) => ({
+        url: `/product/${id}`,
+        method: "PUT",
+        body,
+        formData: true, // ✅ REQUIRED
+      }),
+      invalidatesTags: ["Product"],
+    }),
+
+    /* ================= DELETE ================= */
     deleteProduct: builder.mutation({
-      query: (id) => ({ url: `/product/${id}`, method: "DELETE" }),
-      invalidatesTags: ["Product"]
+      query: (id) => ({
+        url: `/product/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Product"],
     }),
   }),
+
   overrideExisting: false,
 });
 
@@ -58,7 +76,6 @@ export const {
   useUpdateProductMutation,
   useDeleteProductMutation,
   useGetSearchSuggestionsQuery,
-    useGetProductByBarcodeQuery,   // normal query (optional)
-  useLazyGetProductByBarcodeQuery, // 👈 lazy query
-
+  useGetProductByBarcodeQuery,
+  useLazyGetProductByBarcodeQuery,
 } = productApi;
