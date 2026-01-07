@@ -380,31 +380,54 @@ export default function ProductForm({ product, onClose }) {
         </div>
 
         {/* MEDIA */}
-   {/* MEDIA */}
+{/* MEDIA */}
 <div>
+  {/* THUMBNAIL */}
   <input
     type="file"
-    name="thumbnail"             // ✅ FIX
+    name="thumbnail"
     onChange={(e) => setThumbnailFile(e.target.files[0])}
   />
 
   {thumbnailPreview && (
-    <img src={thumbnailPreview} className="w-20 h-20 object-cover" />
+    <img src={thumbnailPreview} className="w-20 h-20 object-cover mt-2" />
   )}
 
+  {/* ADDITIONAL IMAGES */}
   <input
     type="file"
-    name="images"                // ✅ FIX
+    name="images"
     multiple
     onChange={(e) => setImageFiles([...e.target.files])}
   />
 
-  <div className="flex gap-2 mt-2">
-    {imagePreviews.map((img, i) => (
-      <img key={i} src={img} className="w-20 h-20 object-cover" />
-    ))}
-  </div>
+<div className="flex gap-3 mt-3 flex-wrap">
+  {imagePreviews.map((img, i) => (
+    <div
+      key={`${img}-${i}`}
+      className="relative border p-1"
+    >
+      {/* ✕ button */}
+      <button
+        type="button"
+        className="absolute top-0 right-0 text-xs px-1 bg-white border"
+        onClick={() =>
+          setImagePreviews((p) => p.filter((_, idx) => idx !== i))
+        }
+      >
+        ×
+      </button>
+
+      <img
+        src={img}
+        className="w-20 h-20 object-cover"
+      />
+    </div>
+  ))}
 </div>
+
+</div>
+
 
 
         {/* OPTIONS */}
