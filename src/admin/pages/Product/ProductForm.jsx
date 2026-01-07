@@ -20,17 +20,15 @@ const Field = ({ label, children }) => (
 );
 
 const createColor = () => ({
-  id: crypto.randomUUID(), // temp id for NEW colors only
+  id: crypto.randomUUID(), // frontend temp id
   name: "",
   imageFile: null,
   imageUrl: "",
-  isNew: true,
 });
-
 
 /* ---------------- Component ---------------- */
 export default function ProductForm({ product, onClose }) {
-  /* -------- Categories -------- */
+  /* ---------- Categories ---------- */
   const { data: categoryData } = useGetAllCategoriesQuery();
   const categories = categoryData?.categories || [];
 
@@ -38,7 +36,7 @@ export default function ProductForm({ product, onClose }) {
   const subCategories = categories.filter((c) => c.level === "sub");
   const typeCategories = categories.filter((c) => c.level === "type");
 
-  /* -------- Mutations -------- */
+  /* ---------- Mutations ---------- */
   const [createProduct, { isLoading: isCreating }] =
     useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating }] =
@@ -46,7 +44,7 @@ export default function ProductForm({ product, onClose }) {
 
   const isEdit = !!product;
 
-  /* -------- Form State -------- */
+  /* ---------- Form State ---------- */
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -63,15 +61,13 @@ export default function ProductForm({ product, onClose }) {
     barcode: "",
   });
 
-  /* -------- Media State -------- */
+  /* ---------- Media State ---------- */
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState("");
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
 
-  /* =====================================================
-     LOAD PRODUCT (EDIT MODE)
-     ===================================================== */
+  /* ---------- Load product (EDIT) ---------- */
   useEffect(() => {
     if (!product) return;
 
@@ -85,13 +81,13 @@ export default function ProductForm({ product, onClose }) {
       },
       tags: product.tags || [],
       sizes: product.sizes || [],
-     colors:
-  product.colors?.map((c) => ({
-    id: c._id,              // ✅ backend id
-    name: c.name,
-    imageFile: null,
-    imageUrl: c.image || "",
-  })) || [createColor()],
+      colors:
+        product.colors?.map((c) => ({
+          id: c._id, // important for update
+          name: c.name,
+          imageFile: null,
+          imageUrl: c.image || "",
+        })) || [createColor()],
       price: product.price ?? "",
       stock: product.stock ?? "",
       discount: product.discount ?? 0,
@@ -105,22 +101,33 @@ export default function ProductForm({ product, onClose }) {
     setImagePreviews(product.images || []);
   }, [product]);
 
-  /* -------- Category Filtering -------- */
-  const filteredSubCategories = useMemo(() => {
-    if (!form.category.main) return [];
-    return subCategories.filter((s) =>
-      s.parent?.includes(form.category.main)
-    );
-  }, [form.category.main, subCategories]);
+  /* ---------- Category filters ---------- */
+const filteredSubCategories = useMemo(() => {
+  if (!form.category.main) return [];
 
-  const filteredTypeCategories = useMemo(() => {
-    if (!form.category.sub) return [];
-    return typeCategories.filter((t) =>
-      t.parent?.includes(form.category.sub)
-    );
-  }, [form.category.sub, typeCategories]);
+  return subCategories.filter((s) =>
+    Array.isArray(s.parent) &&
+    s.parent.some((p) =>
+      String(p) === String(form.category.main)
+    )
+  );
+}, [form.category.main, subCategories]);
 
-  /* -------- Handlers -------- */
+const filteredTypeCategories = useMemo(() => {
+  if (!form.category.sub) return [];
+
+  return typeCategories.filter((t) =>
+    Array.isArray(t.parent) &&
+    t.parent.some((p) =>
+      String(p) === String(form.category.sub)
+    )
+  );
+}, [form.category.sub, typeCategories]);
+
+
+
+
+  /* ---------- Handlers ---------- */
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((p) => ({ ...p, [name]: type === "checkbox" ? checked : value }));
@@ -153,7 +160,7 @@ export default function ProductForm({ product, onClose }) {
     setForm((p) => ({ ...p, [field]: arr }));
   };
 
-  /* -------- Colors (FIXED) -------- */
+  /* ---------- Colors ---------- */
   const handleColorChange = (id, key, value) => {
     setForm((p) => ({
       ...p,
@@ -183,7 +190,7 @@ export default function ProductForm({ product, onClose }) {
     }));
   };
 
-  /* -------- Submit -------- */
+  /* ---------- Submit ---------- */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -208,16 +215,16 @@ export default function ProductForm({ product, onClose }) {
     fd.append("tags", JSON.stringify(form.tags.filter(Boolean)));
     fd.append("sizes", JSON.stringify(form.sizes.filter(Boolean)));
 
-   fd.append(
-  "colors",
-  JSON.stringify(
-    form.colors.map((c) => ({
-      _id: c.isNew ? null : c.id,
-      name: c.name,
-      image: c.imageUrl || "",
-    }))
-  )
-);
+    fd.append(
+      "colors",
+      JSON.stringify(
+        form.colors.map((c) => ({
+          _id: c.id,
+          name: c.name,
+          image: c.imageFile ? "" : c.imageUrl,
+        }))
+      )
+    );
 
     if (thumbnailFile instanceof File) {
       fd.append("thumbnail", thumbnailFile);
@@ -228,11 +235,11 @@ export default function ProductForm({ product, onClose }) {
     });
 
     form.colors.forEach((c) => {
-  if (c.imageFile instanceof File) {
-    fd.append("colorImages", c.imageFile);
-    fd.append("colorImageIds", c.id);
-  }
-});
+      if (c.imageFile instanceof File) {
+        fd.append("colorImages", c.imageFile);
+        fd.append("colorImageIds", c.id);
+      }
+    });
 
     if (isEdit) {
       await updateProduct({ id: product._id, body: fd }).unwrap();
@@ -243,7 +250,7 @@ export default function ProductForm({ product, onClose }) {
     onClose();
   };
 
-  /* -------- UI -------- */
+  /* ---------- UI ---------- */
   return (
     <div className="fixed inset-0 bg-white z-40 overflow-auto">
       <form onSubmit={handleSubmit} className="max-w-5xl mx-auto p-6 space-y-6">
@@ -257,6 +264,7 @@ export default function ProductForm({ product, onClose }) {
             name="title"
             value={form.title}
             onChange={handleChange}
+            required
             className="w-full border px-3 py-2 rounded"
           />
         </Field>
@@ -267,194 +275,90 @@ export default function ProductForm({ product, onClose }) {
             value={form.description}
             onChange={handleChange}
             rows={4}
+            required
             className="w-full border px-3 py-2 rounded"
           />
         </Field>
 
-        {/* CATEGORIES */}
-        <div className="grid md:grid-cols-3 gap-3">
-          <select
-            value={form.category.main}
-            onChange={(e) => handleCategoryChange("main", e.target.value)}
-            className="border px-3 py-2 rounded"
-          >
-            <option value="">Main</option>
-            {mainCategories.map((c) => (
-              <option key={c._id} value={c._id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={form.category.sub}
-            onChange={(e) => handleCategoryChange("sub", e.target.value)}
-            className="border px-3 py-2 rounded"
-          >
-            <option value="">Sub</option>
-            {filteredSubCategories.map((c) => (
-              <option key={c._id} value={c._id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={form.category.type}
-            onChange={(e) => handleCategoryChange("type", e.target.value)}
-            className="border px-3 py-2 rounded"
-          >
-            <option value="">Type</option>
-            {filteredTypeCategories.map((c) => (
-              <option key={c._id} value={c._id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+        {/* PRICING */}
+        <div className="grid md:grid-cols-3 gap-4">
+          <Field label="Price">
+            <input type="number" name="price" value={form.price} onChange={handleChange} required className="border px-3 py-2 rounded w-full" />
+          </Field>
+          <Field label="Stock">
+            <input type="number" name="stock" value={form.stock} onChange={handleChange} required className="border px-3 py-2 rounded w-full" />
+          </Field>
+          <Field label="Discount %">
+            <input type="number" name="discount" value={form.discount} onChange={handleChange} className="border px-3 py-2 rounded w-full" />
+          </Field>
         </div>
 
-        {/* TAGS & SIZES */}
-        {["tags", "sizes"].map((field) => (
-          <div key={field}>
-            <h4 className="font-medium">{field}</h4>
-            {form[field].map((v, i) => (
-              <div key={i} className="flex gap-2 mb-2">
-                <input
-                  value={v}
-                  onChange={(e) =>
-                    handleArrayChange(field, i, e.target.value)
-                  }
-                  className="border px-3 py-2 rounded flex-1"
-                />
-                <button type="button" onClick={() => removeArrayItem(field, i)}>
-                  ×
-                </button>
-              </div>
-            ))}
-            <button type="button" onClick={() => addArrayItem(field)}>
-              Add
-            </button>
-          </div>
-        ))}
+        {/* CATEGORIES */}
+        <div className="grid md:grid-cols-3 gap-3">
+          <select value={form.category.main} onChange={(e) => handleCategoryChange("main", e.target.value)} required className="border px-3 py-2 rounded">
+            <option value="">Main Category</option>
+            {mainCategories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+          </select>
+
+          <select value={form.category.sub} onChange={(e) => handleCategoryChange("sub", e.target.value)} className="border px-3 py-2 rounded">
+            <option value="">Sub Category</option>
+            {filteredSubCategories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+          </select>
+
+          <select value={form.category.type} onChange={(e) => handleCategoryChange("type", e.target.value)} className="border px-3 py-2 rounded">
+            <option value="">Type</option>
+            {filteredTypeCategories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+          </select>
+        </div>
 
         {/* COLORS */}
         <div>
           <h4 className="font-medium">Colors</h4>
           {form.colors.map((c) => (
             <div key={c.id} className="flex gap-3 mb-2 items-center">
-              <input
-                value={c.name}
-                onChange={(e) =>
-                  handleColorChange(c.id, "name", e.target.value)
-                }
-                className="border px-3 py-2 rounded"
-              />
-              <input
-                type="file"
-                onChange={(e) =>
-                  handleColorFileChange(c.id, e.target.files[0])
-                }
-              />
-              {!c.imageFile && c.imageUrl && (
-                <img
-                  src={c.imageUrl}
-                  alt=""
-                  className="w-12 h-12 object-cover"
-                />
-              )}
-              {c.imageFile && (
-                <img
-                  src={URL.createObjectURL(c.imageFile)}
-                  alt=""
-                  className="w-12 h-12 object-cover"
-                />
-              )}
-              <button type="button" onClick={() => removeColor(c.id)}>
-                ×
-              </button>
+              <input value={c.name} onChange={(e) => handleColorChange(c.id, "name", e.target.value)} className="border px-3 py-2 rounded" />
+              <input type="file" onChange={(e) => handleColorFileChange(c.id, e.target.files[0])} />
+              {c.imageUrl && !c.imageFile && <img src={c.imageUrl} className="w-12 h-12 object-cover" />}
+              {c.imageFile && <img src={URL.createObjectURL(c.imageFile)} className="w-12 h-12 object-cover" />}
+              <button type="button" onClick={() => removeColor(c.id)}>×</button>
             </div>
           ))}
-          <button type="button" onClick={addColor}>
-            Add Color
-          </button>
+          <button type="button" onClick={addColor}>Add Color</button>
         </div>
 
         {/* MEDIA */}
-{/* MEDIA */}
-<div>
-  {/* THUMBNAIL */}
-  <input
-    type="file"
-    name="thumbnail"
-    onChange={(e) => setThumbnailFile(e.target.files[0])}
-  />
+        <div>
+          <input type="file" name="thumbnail" required={!isEdit} onChange={(e) => setThumbnailFile(e.target.files[0])} />
+          {thumbnailPreview && <img src={thumbnailPreview} className="w-20 h-20 object-cover mt-2" />}
 
-  {thumbnailPreview && (
-    <img src={thumbnailPreview} className="w-20 h-20 object-cover mt-2" />
-  )}
+          <input type="file" multiple onChange={(e) => setImageFiles([...e.target.files])} />
 
-  {/* ADDITIONAL IMAGES */}
-  <input
-    type="file"
-    name="images"
-    multiple
-    onChange={(e) => setImageFiles([...e.target.files])}
-  />
+          <div className="flex gap-3 mt-3 flex-wrap">
+            {imagePreviews.map((img, i) => (
+              <div key={`${img}-${i}`} className="relative border p-1">
+                <button type="button" className="absolute top-0 right-0 text-xs px-1 bg-white border"
+                  onClick={() => setImagePreviews((p) => p.filter((_, idx) => idx !== i))}
+                >
+                  ×
+                </button>
+                <img src={img} className="w-20 h-20 object-cover" />
+              </div>
+            ))}
+          </div>
+        </div>
 
-<div className="flex gap-3 mt-3 flex-wrap">
-  {imagePreviews.map((img, i) => (
-    <div
-      key={`${img}-${i}`}
-      className="relative border p-1"
-    >
-      {/* ✕ button */}
-      <button
-        type="button"
-        className="absolute top-0 right-0 text-xs px-1 bg-white border"
-        onClick={() =>
-          setImagePreviews((p) => p.filter((_, idx) => idx !== i))
-        }
-      >
-        ×
-      </button>
-
-      <img
-        src={img}
-        className="w-20 h-20 object-cover"
-      />
-    </div>
-  ))}
-</div>
-
-</div>
-
-
+        {/* BARCODE */}
+        <BarcodeSection product={{ ...product, barcode: String(form.barcode || "") }} />
 
         {/* OPTIONS */}
         {["isFeatured", "isReturnable", "isExchangeable"].map((k) => (
           <label key={k} className="flex gap-2">
-            <input
-              type="checkbox"
-              name={k}
-              checked={form[k]}
-              onChange={handleChange}
-            />
+            <input type="checkbox" name={k} checked={form[k]} onChange={handleChange} />
             {k}
           </label>
         ))}
 
-        {/* BARCODE */}
-       <BarcodeSection
-  product={{ ...product, barcode: String(form.barcode || "") }}
-/>
-
-
-        {/* SUBMIT */}
-        <button
-          type="submit"
-          disabled={isCreating || isUpdating}
-          className="px-4 py-2 bg-blue-600 text-white rounded"
-        >
+        <button type="submit" disabled={isCreating || isUpdating} className="px-4 py-2 bg-blue-600 text-white rounded">
           {isEdit ? "Update Product" : "Create Product"}
         </button>
       </form>
