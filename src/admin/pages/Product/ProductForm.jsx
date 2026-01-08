@@ -35,6 +35,7 @@ export default function ProductForm({ editingProduct, onClose }) {
 
   const [existingImages, setExistingImages] = useState([]);
   const [images, setImages] = useState([]);
+const [previewImage, setPreviewImage] = useState(null);
 
   const [createProduct] = useCreateProductMutation();
   const [updateProduct] = useUpdateProductMutation();
@@ -81,112 +82,110 @@ export default function ProductForm({ editingProduct, onClose }) {
   };
 
   /* ---------- COLORS ---------- */
-const addColor = () => {
-  setColors((p) => [
-    ...p,
-    { name: "", image: "", file: null }, // ❌ NO _id
-  ]);
+  const addColor = () => {
+    setColors((p) => [
+      ...p,
+      { _id: crypto.randomUUID(), name: "", image: "", file: null },
+    ]);
+  };
+
+const updateColor = (index, key, value) => {
+  setColors((p) =>
+    p.map((c, i) => (i === index ? { ...c, [key]: value } : c))
+  );
 };
 
+const removeColor = (index) => {
+  setColors((p) => p.filter((_, i) => i !== index));
+};
 
-  const updateColor = (id, key, value) => {
-    setColors((p) =>
-      p.map((c) => (c._id === id ? { ...c, [key]: value } : c))
-    );
-  };
-
-  const removeColor = (id) => {
-    setColors((p) => p.filter((c) => c._id !== id));
-  };
+const removeExistingImage = (imgUrl) => {
+  setExistingImages((prev) => prev.filter((img) => img !== imgUrl));
+};
 
   /* ================= SUBMIT ================= */
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  if (!category.main) {
-    alert("Main category is required");
-    return;
-  }
+    if (!category.main) {
+      alert("Main category is required");
+      return;
+    }
 
-  const fd = new FormData();
+    const fd = new FormData();
 
-  /* BASIC */
-  fd.append("title", form.title);
-  fd.append("description", form.description);
-  fd.append("price", form.price);
-  fd.append("discount", form.discount || 0);
-  fd.append("stock", form.stock);
-  fd.append("barcode", form.barcode);
-  fd.append("isFeatured", String(form.isFeatured));
+    /* BASIC */
+    fd.append("title", form.title);
+    fd.append("description", form.description);
+    fd.append("price", form.price);
+    fd.append("discount", form.discount || 0);
+    fd.append("stock", form.stock);
+    fd.append("barcode", form.barcode);
+    fd.append("isFeatured", String(form.isFeatured));
 
-  /* CATEGORY */
-  fd.append(
-    "category",
-    JSON.stringify({
-      main: category.main,
-      sub: category.sub || null,
-      type: category.type || null,
-    })
-  );
+    /* CATEGORY */
+    fd.append(
+      "category",
+      JSON.stringify({
+        main: category.main,
+        sub: category.sub || null,
+        type: category.type || null,
+      })
+    );
 
-  /* TAGS & SIZES */
-  fd.append(
-    "tags",
-    JSON.stringify(
-      form.tags.split(",").map((t) => t.trim()).filter(Boolean)
-    )
-  );
-  fd.append(
-    "sizes",
-    JSON.stringify(
-      form.sizes.split(",").map((s) => s.trim()).filter(Boolean)
-    )
-  );
+    /* TAGS & SIZES */
+    fd.append(
+      "tags",
+      JSON.stringify(
+        form.tags.split(",").map((t) => t.trim()).filter(Boolean)
+      )
+    );
+    fd.append(
+      "sizes",
+      JSON.stringify(
+        form.sizes.split(",").map((s) => s.trim()).filter(Boolean)
+      )
+    );
 
-  /* COLORS JSON */
-  fd.append(
-    "colors",
-    JSON.stringify(
+    /* COLORS JSON */
+fd.append(
+  "colors",
+  JSON.stringify(
     colors.map((c) => ({
-  ...(c._id ? { _id: c._id } : {}), // ✅ only if exists
-  name: c.name,
-  image: c.image || "",
-}))
-
-    )
-  );
-
-  /* COLORS FILES */
-colors.forEach((c) => {
-  if (c._id && c.file) {
-    fd.append("colorImages", c.file);
-    fd.append("colorImageIds", c._id);
-  }
-});
+      _id: c._id,
+      name: c.name,
+      image: c.image || "",
+    }))
+  )
+);
 
 
-  /* THUMBNAIL */
-  if (thumbnail) fd.append("thumbnail", thumbnail);
+    /* COLORS FILES */
+    colors.forEach((c) => {
+      if (c.file) {
+        fd.append("colorImages", c.file);
+        fd.append("colorImageIds", c._id);
+      }
+    });
 
-  /* PRODUCT IMAGES */
-  images.forEach((img) => fd.append("images", img));
+    /* THUMBNAIL */
+    if (thumbnail) fd.append("thumbnail", thumbnail);
 
-  try {
+    /* PRODUCT IMAGES */
+    images.forEach((img) => fd.append("images", img));
+
     if (editingProduct) {
-      await updateProduct({ id: editingProduct._id, body: fd }).unwrap();
-      alert("✅ Product updated successfully");
+      await updateProduct({ id: editingProduct._id, body: fd });
       onClose();
     } else {
-      await createProduct(fd).unwrap();
-      alert("✅ Product created successfully");
-      onClose(); // ✅ CLOSE FORM AFTER CREATE
+      await createProduct(fd);
+      setForm(emptyForm);
+      setCategory({ main: "", sub: "", type: "" });
+      setColors([]);
+      setImages([]);
+      setThumbnail(null);
     }
-  } catch (error) {
-    console.error("Product save failed", error);
-    alert("❌ Failed to save product. Please try again.");
-  }
-};
-
+  };
 
   /* ================= CATEGORY FILTER ================= */
   const mains = categories.filter((c) => c.level === "main");
@@ -335,43 +334,47 @@ colors.forEach((c) => {
               </button>
             </div>
 
-            {colors.map((c) => (
-              <div key={c._id} className="grid grid-cols-5 gap-3 mb-3 items-center">
-                <input
-                  className="border p-2"
-                  placeholder="Color name"
-                  value={c.name}
-                  onChange={(e) => updateColor(c._id, "name", e.target.value)}
-                />
+          {colors.map((c, index) => (
+  <div
+    key={index} // ✅ KEEP INDEX
+    className="grid grid-cols-5 gap-3 mb-3 items-center"
+  >
+    <input
+      className="border p-2"
+      placeholder="Color name"
+      value={c.name}
+      onChange={(e) => updateColor(index, "name", e.target.value)}
+    />
 
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) =>
-                    updateColor(c._id, "file", e.target.files[0])
-                  }
-                />
+    <input
+      type="file"
+      accept="image/*"
+      onChange={(e) =>
+        updateColor(index, "file", e.target.files[0])
+      }
+    />
 
-                {c.image && !c.file && (
-                  <img src={c.image} className="h-12 w-12 object-cover border" />
-                )}
+    {c.image && !c.file && (
+      <img src={c.image} className="h-12 w-12 object-cover border" />
+    )}
 
-                {c.file && (
-                  <img
-                    src={URL.createObjectURL(c.file)}
-                    className="h-12 w-12 object-cover border"
-                  />
-                )}
+    {c.file && (
+      <img
+        src={URL.createObjectURL(c.file)}
+        className="h-12 w-12 object-cover border"
+      />
+    )}
 
-                <button
-                  type="button"
-                  onClick={() => removeColor(c._id)}
-                  className="text-red-600"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
+    <button
+      type="button"
+      onClick={() => removeColor(index)}
+      className="text-red-600"
+    >
+      ✕
+    </button>
+  </div>
+))}
+
           </section>
 
           {/* IMAGES */}
@@ -385,13 +388,31 @@ colors.forEach((c) => {
             )}
             <input type="file" onChange={(e) => setThumbnail(e.target.files[0])} />
 
-            {existingImages.length > 0 && (
-              <div className="grid grid-cols-6 gap-3 mt-3">
-                {existingImages.map((img, i) => (
-                  <img key={i} src={img} className="h-24 w-full border object-cover" />
-                ))}
-              </div>
-            )}
+           {existingImages.length > 0 && (
+  <div className="grid grid-cols-6 gap-3 mt-3">
+    {existingImages.map((img) => (
+      <div key={img} className="relative border cursor-pointer">
+        <img
+          src={img}
+          className="h-24 w-full object-cover"
+          onClick={() => setPreviewImage(img)}
+        />
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            removeExistingImage(img);
+          }}
+          className="absolute top-1 right-1 bg-white border rounded-full w-6 h-6 flex items-center justify-center text-red-600"
+        >
+          ✕
+        </button>
+      </div>
+    ))}
+  </div>
+)}
+
 
             <input type="file" multiple className="mt-3" onChange={(e) => setImages([...e.target.files])} />
           </section>
@@ -407,6 +428,25 @@ colors.forEach((c) => {
             {editingProduct ? "Update Product" : "Create Product"}
           </button>
         </div>
+        {previewImage && (
+  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+    <div className="relative bg-white p-4 max-w-3xl">
+      <img
+        src={previewImage}
+        className="max-h-[80vh] max-w-full object-contain"
+      />
+
+      <button
+        type="button"
+        onClick={() => setPreviewImage(null)}
+        className="absolute top-2 right-2 bg-white border rounded-full w-8 h-8 flex items-center justify-center"
+      >
+        ✕
+      </button>
+    </div>
+  </div>
+)}
+
       </form>
     </div>
   );
