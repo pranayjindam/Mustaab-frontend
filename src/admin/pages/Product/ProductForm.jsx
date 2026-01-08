@@ -1,366 +1,412 @@
-// ProductForm.jsx - Lightweight, formal, no-animation
-import React, { useState, useEffect, useMemo } from "react";
-import { useGetAllCategoriesQuery } from "../../../redux/api/categoryApi";
+// ProductForm.jsx
+import React, { useEffect, useState } from "react";
 import {
   useCreateProductMutation,
   useUpdateProductMutation,
 } from "../../../redux/api/productApi";
-import BarcodeSection from "../BarcodeSection";
+import { useGetAllCategoriesQuery } from "../../../redux/api/categoryApi";
 
-/* ---------------- Helpers ---------------- */
-const Field = ({ label, children }) => (
-  <div className="mb-4">
-    {label && (
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label}
-      </label>
-    )}
-    {children}
-  </div>
-);
+const emptyForm = {
+  title: "",
+  description: "",
+  price: "",
+  discount: "",
+  stock: "",
+  barcode: "",
+  tags: "",
+  sizes: "",
+  isFeatured: false,
+};
 
-const createColor = () => ({
-  id: crypto.randomUUID(), // frontend temp id
-  name: "",
-  imageFile: null,
-  imageUrl: "",
-});
+export default function ProductForm({ editingProduct, onClose }) {
+  const { data } = useGetAllCategoriesQuery();
+  const categories = data?.categories || [];
 
-/* ---------------- Component ---------------- */
-export default function ProductForm({ product, onClose }) {
-  /* ---------- Categories ---------- */
-  const { data: categoryData } = useGetAllCategoriesQuery();
-  const categories = categoryData?.categories || [];
+  const [form, setForm] = useState(emptyForm);
+  const [category, setCategory] = useState({ main: "", sub: "", type: "" });
 
-  const mainCategories = categories.filter((c) => c.level === "main");
-  const subCategories = categories.filter((c) => c.level === "sub");
-  const typeCategories = categories.filter((c) => c.level === "type");
+  /* ---------- COLORS ---------- */
+  // { _id, name, image (existing), file (new) }
+  const [colors, setColors] = useState([]);
 
-  /* ---------- Mutations ---------- */
-  const [createProduct, { isLoading: isCreating }] =
-    useCreateProductMutation();
-  const [updateProduct, { isLoading: isUpdating }] =
-    useUpdateProductMutation();
+  /* ---------- IMAGES ---------- */
+  const [existingThumbnail, setExistingThumbnail] = useState("");
+  const [thumbnail, setThumbnail] = useState(null);
 
-  const isEdit = !!product;
+  const [existingImages, setExistingImages] = useState([]);
+  const [images, setImages] = useState([]);
 
-  /* ---------- Form State ---------- */
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    category: { main: "", sub: "", type: "" },
-    tags: [],
-    sizes: [],
-    colors: [createColor()],
-    price: "",
-    stock: "",
-    discount: 0,
-    isFeatured: false,
-    isReturnable: false,
-    isExchangeable: false,
-    barcode: "",
-  });
+  const [createProduct] = useCreateProductMutation();
+  const [updateProduct] = useUpdateProductMutation();
 
-  /* ---------- Media State ---------- */
-  const [thumbnailFile, setThumbnailFile] = useState(null);
-  const [thumbnailPreview, setThumbnailPreview] = useState("");
-  const [imageFiles, setImageFiles] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
-
-  /* ---------- Load product (EDIT) ---------- */
+  /* ================= PREFILL (EDIT) ================= */
   useEffect(() => {
-    if (!product) return;
+    if (!editingProduct) return;
 
     setForm({
-      title: product.title || "",
-      description: product.description || "",
-      category: {
-        main: product.category?.main?._id || "",
-        sub: product.category?.sub?._id || "",
-        type: product.category?.type?._id || "",
-      },
-      tags: product.tags || [],
-      sizes: product.sizes || [],
-      colors:
-        product.colors?.map((c) => ({
-          id: c._id, // important for update
-          name: c.name,
-          imageFile: null,
-          imageUrl: c.image || "",
-        })) || [createColor()],
-      price: product.price ?? "",
-      stock: product.stock ?? "",
-      discount: product.discount ?? 0,
-      isFeatured: product.isFeatured || false,
-      isReturnable: product.isReturnable || false,
-      isExchangeable: product.isExchangeable || false,
-      barcode: product.barcode ? String(product.barcode) : "",
+      title: editingProduct.title || "",
+      description: editingProduct.description || "",
+      price: editingProduct.price || "",
+      discount: editingProduct.discount || "",
+      stock: editingProduct.stock || "",
+      barcode: editingProduct.barcode || "",
+      tags: editingProduct.tags?.join(", ") || "",
+      sizes: editingProduct.sizes?.join(", ") || "",
+      isFeatured: editingProduct.isFeatured || false,
     });
 
-    setThumbnailPreview(product.thumbnail || "");
-    setImagePreviews(product.images || []);
-  }, [product]);
+    setCategory({
+      main: editingProduct.category?.main?._id || "",
+      sub: editingProduct.category?.sub?._id || "",
+      type: editingProduct.category?.type?._id || "",
+    });
 
-  /* ---------- Category filters ---------- */
-const filteredSubCategories = useMemo(() => {
-  if (!form.category.main) return [];
+    setColors(
+      editingProduct.colors?.map((c) => ({
+        _id: c._id,
+        name: c.name,
+        image: c.image || "",
+        file: null,
+      })) || []
+    );
 
-  return subCategories.filter((s) =>
-    Array.isArray(s.parent) &&
-    s.parent.some((p) =>
-      String(p) === String(form.category.main)
-    )
-  );
-}, [form.category.main, subCategories]);
+    setExistingThumbnail(editingProduct.thumbnail || "");
+    setExistingImages(editingProduct.images || []);
+  }, [editingProduct]);
 
-const filteredTypeCategories = useMemo(() => {
-  if (!form.category.sub) return [];
-
-  return typeCategories.filter((t) =>
-    Array.isArray(t.parent) &&
-    t.parent.some((p) =>
-      String(p) === String(form.category.sub)
-    )
-  );
-}, [form.category.sub, typeCategories]);
-
-
-
-
-  /* ---------- Handlers ---------- */
+  /* ================= HANDLERS ================= */
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((p) => ({ ...p, [name]: type === "checkbox" ? checked : value }));
   };
 
-  const handleCategoryChange = (level, value) => {
-    setForm((p) => ({
-      ...p,
-      category: {
-        ...p.category,
-        [level]: value,
-        ...(level === "main" && { sub: "", type: "" }),
-        ...(level === "sub" && { type: "" }),
-      },
-    }));
+  /* ---------- COLORS ---------- */
+const addColor = () => {
+  setColors((p) => [
+    ...p,
+    { name: "", image: "", file: null }, // ❌ NO _id
+  ]);
+};
+
+
+  const updateColor = (id, key, value) => {
+    setColors((p) =>
+      p.map((c) => (c._id === id ? { ...c, [key]: value } : c))
+    );
   };
-
-  const handleArrayChange = (field, i, value) => {
-    const arr = [...form[field]];
-    arr[i] = value;
-    setForm((p) => ({ ...p, [field]: arr }));
-  };
-
-  const addArrayItem = (field) =>
-    setForm((p) => ({ ...p, [field]: [...p[field], ""] }));
-
-  const removeArrayItem = (field, i) => {
-    const arr = [...form[field]];
-    arr.splice(i, 1);
-    setForm((p) => ({ ...p, [field]: arr }));
-  };
-
-  /* ---------- Colors ---------- */
-  const handleColorChange = (id, key, value) => {
-    setForm((p) => ({
-      ...p,
-      colors: p.colors.map((c) =>
-        c.id === id ? { ...c, [key]: value } : c
-      ),
-    }));
-  };
-
-  const handleColorFileChange = (id, file) => {
-    setForm((p) => ({
-      ...p,
-      colors: p.colors.map((c) =>
-        c.id === id ? { ...c, imageFile: file } : c
-      ),
-    }));
-  };
-
-  const addColor = () =>
-    setForm((p) => ({ ...p, colors: [...p.colors, createColor()] }));
 
   const removeColor = (id) => {
-    if (form.colors.length === 1) return;
-    setForm((p) => ({
-      ...p,
-      colors: p.colors.filter((c) => c.id !== id),
-    }));
+    setColors((p) => p.filter((c) => c._id !== id));
   };
 
-  /* ---------- Submit ---------- */
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  /* ================= SUBMIT ================= */
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    let finalBarcode = form.barcode.trim();
-    if (!finalBarcode) {
-      finalBarcode = Math.floor(
-        100000000000 + Math.random() * 900000000000
-      ).toString();
-    }
+  if (!category.main) {
+    alert("Main category is required");
+    return;
+  }
 
-    const fd = new FormData();
-    fd.append("title", form.title);
-    fd.append("description", form.description);
-    fd.append("price", form.price);
-    fd.append("stock", form.stock);
-    fd.append("discount", form.discount);
-    fd.append("barcode", finalBarcode);
-    fd.append("isFeatured", String(form.isFeatured));
-    fd.append("isReturnable", String(form.isReturnable));
-    fd.append("isExchangeable", String(form.isExchangeable));
-    fd.append("category", JSON.stringify(form.category));
-    fd.append("tags", JSON.stringify(form.tags.filter(Boolean)));
-    fd.append("sizes", JSON.stringify(form.sizes.filter(Boolean)));
+  const fd = new FormData();
 
-    fd.append(
-      "colors",
-      JSON.stringify(
-        form.colors.map((c) => ({
-          _id: c.id,
-          name: c.name,
-          image: c.imageFile ? "" : c.imageUrl,
-        }))
-      )
-    );
+  /* BASIC */
+  fd.append("title", form.title);
+  fd.append("description", form.description);
+  fd.append("price", form.price);
+  fd.append("discount", form.discount || 0);
+  fd.append("stock", form.stock);
+  fd.append("barcode", form.barcode);
+  fd.append("isFeatured", String(form.isFeatured));
 
-    if (thumbnailFile instanceof File) {
-      fd.append("thumbnail", thumbnailFile);
-    }
+  /* CATEGORY */
+  fd.append(
+    "category",
+    JSON.stringify({
+      main: category.main,
+      sub: category.sub || null,
+      type: category.type || null,
+    })
+  );
 
-    imageFiles.forEach((f) => {
-      if (f instanceof File) fd.append("images", f);
-    });
+  /* TAGS & SIZES */
+  fd.append(
+    "tags",
+    JSON.stringify(
+      form.tags.split(",").map((t) => t.trim()).filter(Boolean)
+    )
+  );
+  fd.append(
+    "sizes",
+    JSON.stringify(
+      form.sizes.split(",").map((s) => s.trim()).filter(Boolean)
+    )
+  );
 
-    form.colors.forEach((c) => {
-      if (c.imageFile instanceof File) {
-        fd.append("colorImages", c.imageFile);
-        fd.append("colorImageIds", c.id);
-      }
-    });
+  /* COLORS JSON */
+  fd.append(
+    "colors",
+    JSON.stringify(
+    colors.map((c) => ({
+  ...(c._id ? { _id: c._id } : {}), // ✅ only if exists
+  name: c.name,
+  image: c.image || "",
+}))
 
-    if (isEdit) {
-      await updateProduct({ id: product._id, body: fd }).unwrap();
+    )
+  );
+
+  /* COLORS FILES */
+colors.forEach((c) => {
+  if (c._id && c.file) {
+    fd.append("colorImages", c.file);
+    fd.append("colorImageIds", c._id);
+  }
+});
+
+
+  /* THUMBNAIL */
+  if (thumbnail) fd.append("thumbnail", thumbnail);
+
+  /* PRODUCT IMAGES */
+  images.forEach((img) => fd.append("images", img));
+
+  try {
+    if (editingProduct) {
+      await updateProduct({ id: editingProduct._id, body: fd }).unwrap();
+      alert("✅ Product updated successfully");
+      onClose();
     } else {
       await createProduct(fd).unwrap();
+      alert("✅ Product created successfully");
+      onClose(); // ✅ CLOSE FORM AFTER CREATE
     }
+  } catch (error) {
+    console.error("Product save failed", error);
+    alert("❌ Failed to save product. Please try again.");
+  }
+};
 
-    onClose();
-  };
 
-  /* ---------- UI ---------- */
+  /* ================= CATEGORY FILTER ================= */
+  const mains = categories.filter((c) => c.level === "main");
+  const subs = categories.filter(
+    (c) => c.level === "sub" && c.parent?.some((p) => p._id === category.main)
+  );
+  const types = categories.filter(
+    (c) => c.level === "type" && c.parent?.some((p) => p._id === category.sub)
+  );
+
+  /* ================= UI ================= */
   return (
-    <div className="fixed inset-0 bg-white z-40 overflow-auto">
-      <form onSubmit={handleSubmit} className="max-w-5xl mx-auto p-6 space-y-6">
-        <h2 className="text-lg font-semibold">
-          {isEdit ? "Edit Product" : "Create Product"}
-        </h2>
-
-        {/* BASIC */}
-        <Field label="Title">
-          <input
-            name="title"
-            value={form.title}
-            onChange={handleChange}
-            required
-            className="w-full border px-3 py-2 rounded"
-          />
-        </Field>
-
-        <Field label="Description">
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            rows={4}
-            required
-            className="w-full border px-3 py-2 rounded"
-          />
-        </Field>
-
-        {/* PRICING */}
-        <div className="grid md:grid-cols-3 gap-4">
-          <Field label="Price">
-            <input type="number" name="price" value={form.price} onChange={handleChange} required className="border px-3 py-2 rounded w-full" />
-          </Field>
-          <Field label="Stock">
-            <input type="number" name="stock" value={form.stock} onChange={handleChange} required className="border px-3 py-2 rounded w-full" />
-          </Field>
-          <Field label="Discount %">
-            <input type="number" name="discount" value={form.discount} onChange={handleChange} className="border px-3 py-2 rounded w-full" />
-          </Field>
+    <div className="min-h-screen bg-gray-100 p-6">
+      <form
+        onSubmit={handleSubmit}
+        className="max-w-6xl mx-auto bg-white border rounded shadow"
+      >
+        {/* HEADER */}
+        <div className="flex justify-between items-center px-6 py-4 border-b bg-gray-50">
+          <h1 className="text-xl font-semibold">
+            {editingProduct ? "Edit Product" : "Add New Product"}
+          </h1>
+          <button type="button" onClick={onClose}>✕</button>
         </div>
 
-        {/* CATEGORIES */}
-        <div className="grid md:grid-cols-3 gap-3">
-          <select value={form.category.main} onChange={(e) => handleCategoryChange("main", e.target.value)} required className="border px-3 py-2 rounded">
-            <option value="">Main Category</option>
-            {mainCategories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
-          </select>
+        <div className="p-6 space-y-8">
 
-          <select value={form.category.sub} onChange={(e) => handleCategoryChange("sub", e.target.value)} className="border px-3 py-2 rounded">
-            <option value="">Sub Category</option>
-            {filteredSubCategories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
-          </select>
+          {/* PRODUCT INFO */}
+          <section>
+            <h2 className="text-sm font-semibold text-blue-600 mb-3">
+              PRODUCT INFORMATION
+            </h2>
+            <input
+              className="border p-2 w-full mb-3"
+              placeholder="Product title"
+              name="title"
+              value={form.title}
+              onChange={handleChange}
+              required
+            />
+            <textarea
+              className="border p-2 w-full"
+              placeholder="Full product description"
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              rows={4}
+            />
+          </section>
 
-          <select value={form.category.type} onChange={(e) => handleCategoryChange("type", e.target.value)} className="border px-3 py-2 rounded">
-            <option value="">Type</option>
-            {filteredTypeCategories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
-          </select>
-        </div>
+          {/* CATEGORY */}
+          <section>
+            <h2 className="text-sm font-semibold text-purple-600 mb-3">
+              CATEGORY PLACEMENT
+            </h2>
+            <div className="grid grid-cols-3 gap-3">
+              <select
+                className="border p-2"
+                value={category.main}
+                onChange={(e) => setCategory({ main: e.target.value })}
+                required
+              >
+                <option value="">Main Category</option>
+                {mains.map((c) => (
+                  <option key={c._id} value={c._id}>{c.name}</option>
+                ))}
+              </select>
 
-        {/* COLORS */}
-        <div>
-          <h4 className="font-medium">Colors</h4>
-          {form.colors.map((c) => (
-            <div key={c.id} className="flex gap-3 mb-2 items-center">
-              <input value={c.name} onChange={(e) => handleColorChange(c.id, "name", e.target.value)} className="border px-3 py-2 rounded" />
-              <input type="file" onChange={(e) => handleColorFileChange(c.id, e.target.files[0])} />
-              {c.imageUrl && !c.imageFile && <img src={c.imageUrl} className="w-12 h-12 object-cover" />}
-              {c.imageFile && <img src={URL.createObjectURL(c.imageFile)} className="w-12 h-12 object-cover" />}
-              <button type="button" onClick={() => removeColor(c.id)}>×</button>
+              <select
+                className="border p-2"
+                value={category.sub}
+                onChange={(e) =>
+                  setCategory((p) => ({ ...p, sub: e.target.value }))
+                }
+              >
+                <option value="">Sub Category</option>
+                {subs.map((c) => (
+                  <option key={c._id} value={c._id}>{c.name}</option>
+                ))}
+              </select>
+
+              <select
+                className="border p-2"
+                value={category.type}
+                onChange={(e) =>
+                  setCategory((p) => ({ ...p, type: e.target.value }))
+                }
+              >
+                <option value="">Type Category</option>
+                {types.map((c) => (
+                  <option key={c._id} value={c._id}>{c.name}</option>
+                ))}
+              </select>
             </div>
-          ))}
-          <button type="button" onClick={addColor}>Add Color</button>
-        </div>
+          </section>
 
-        {/* MEDIA */}
-        <div>
-          <input type="file" name="thumbnail" required={!isEdit} onChange={(e) => setThumbnailFile(e.target.files[0])} />
-          {thumbnailPreview && <img src={thumbnailPreview} className="w-20 h-20 object-cover mt-2" />}
+          {/* PRICING */}
+          <section>
+            <h2 className="text-sm font-semibold text-green-600 mb-3">
+              PRICING & INVENTORY
+            </h2>
+            <div className="grid grid-cols-4 gap-3">
+              <input className="border p-2" placeholder="Price ₹" name="price" value={form.price} onChange={handleChange} />
+              <input className="border p-2" placeholder="Discount %" name="discount" value={form.discount} onChange={handleChange} />
+              <input className="border p-2" placeholder="Stock Qty" name="stock" value={form.stock} onChange={handleChange} />
+              <input className="border p-2" placeholder="Barcode" name="barcode" value={form.barcode} onChange={handleChange} />
+            </div>
 
-          <input type="file" multiple onChange={(e) => setImageFiles([...e.target.files])} />
+            <label className="flex items-center gap-2 mt-3">
+              <input type="checkbox" name="isFeatured" checked={form.isFeatured} onChange={handleChange} />
+              <span>Featured Product</span>
+            </label>
+          </section>
 
-          <div className="flex gap-3 mt-3 flex-wrap">
-            {imagePreviews.map((img, i) => (
-              <div key={`${img}-${i}`} className="relative border p-1">
-                <button type="button" className="absolute top-0 right-0 text-xs px-1 bg-white border"
-                  onClick={() => setImagePreviews((p) => p.filter((_, idx) => idx !== i))}
+          {/* TAGS & SIZES */}
+          <section>
+            <h2 className="text-sm font-semibold text-teal-600 mb-3">
+              TAGS & SIZES
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                className="border p-2"
+                placeholder="Tags (comma separated)"
+                name="tags"
+                value={form.tags}
+                onChange={handleChange}
+              />
+              <input
+                className="border p-2"
+                placeholder="Sizes (S, M, L, XL)"
+                name="sizes"
+                value={form.sizes}
+                onChange={handleChange}
+              />
+            </div>
+          </section>
+
+          {/* COLORS */}
+          <section>
+            <div className="flex justify-between mb-3">
+              <h2 className="text-sm font-semibold text-orange-600">
+                COLOR VARIANTS
+              </h2>
+              <button type="button" onClick={addColor} className="border px-3 py-1">
+                + Add Color
+              </button>
+            </div>
+
+            {colors.map((c) => (
+              <div key={c._id} className="grid grid-cols-5 gap-3 mb-3 items-center">
+                <input
+                  className="border p-2"
+                  placeholder="Color name"
+                  value={c.name}
+                  onChange={(e) => updateColor(c._id, "name", e.target.value)}
+                />
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) =>
+                    updateColor(c._id, "file", e.target.files[0])
+                  }
+                />
+
+                {c.image && !c.file && (
+                  <img src={c.image} className="h-12 w-12 object-cover border" />
+                )}
+
+                {c.file && (
+                  <img
+                    src={URL.createObjectURL(c.file)}
+                    className="h-12 w-12 object-cover border"
+                  />
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => removeColor(c._id)}
+                  className="text-red-600"
                 >
-                  ×
+                  ✕
                 </button>
-                <img src={img} className="w-20 h-20 object-cover" />
               </div>
             ))}
-          </div>
+          </section>
+
+          {/* IMAGES */}
+          <section>
+            <h2 className="text-sm font-semibold text-pink-600 mb-3">
+              PRODUCT IMAGES
+            </h2>
+
+            {existingThumbnail && (
+              <img src={existingThumbnail} className="h-24 w-24 object-cover border mb-2" />
+            )}
+            <input type="file" onChange={(e) => setThumbnail(e.target.files[0])} />
+
+            {existingImages.length > 0 && (
+              <div className="grid grid-cols-6 gap-3 mt-3">
+                {existingImages.map((img, i) => (
+                  <img key={i} src={img} className="h-24 w-full border object-cover" />
+                ))}
+              </div>
+            )}
+
+            <input type="file" multiple className="mt-3" onChange={(e) => setImages([...e.target.files])} />
+          </section>
+
         </div>
 
-        {/* BARCODE */}
-        <BarcodeSection product={{ ...product, barcode: String(form.barcode || "") }} />
-
-        {/* OPTIONS */}
-        {["isFeatured", "isReturnable", "isExchangeable"].map((k) => (
-          <label key={k} className="flex gap-2">
-            <input type="checkbox" name={k} checked={form[k]} onChange={handleChange} />
-            {k}
-          </label>
-        ))}
-
-        <button type="submit" disabled={isCreating || isUpdating} className="px-4 py-2 bg-blue-600 text-white rounded">
-          {isEdit ? "Update Product" : "Create Product"}
-        </button>
+        {/* ACTIONS */}
+        <div className="border-t px-6 py-4 flex justify-end gap-3 bg-gray-50">
+          <button type="button" onClick={onClose} className="border px-4 py-2">
+            Cancel
+          </button>
+          <button type="submit" className="bg-blue-600 text-white px-6 py-2">
+            {editingProduct ? "Update Product" : "Create Product"}
+          </button>
+        </div>
       </form>
     </div>
   );

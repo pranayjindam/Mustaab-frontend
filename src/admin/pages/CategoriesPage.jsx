@@ -1,236 +1,180 @@
-import React, { useState } from "react";
+// CategoryPage.jsx
+import React, { useState, useMemo } from "react";
 import {
   useGetAllCategoriesQuery,
   useDeleteCategoryMutation,
 } from "../../redux/api/categoryApi";
 import CategoryForm from "./CategoryForm";
 
-export default function AdminCategoryPage() {
-  const { data, isLoading, error } = useGetAllCategoriesQuery();
+export default function CategoryPage() {
+  const { data, isLoading } = useGetAllCategoriesQuery();
   const [deleteCategory] = useDeleteCategoryMutation();
+
+  const [editingCategory, setEditingCategory] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [expandedMain, setExpandedMain] = useState({});
-  const [expandedSub, setExpandedSub] = useState({});
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="inline-block rounded-full h-10 w-10 border-2 border-gray-300 mb-4" />
-          <p className="text-gray-600 font-medium">Loading categories...</p>
-        </div>
-      </div>
-    );
-  }
+  const categories = data?.categories || [];
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
-          <p className="text-red-600 font-medium">Error loading categories</p>
-        </div>
-      </div>
-    );
-  }
+  /* ================= BUILD HIERARCHY ================= */
+  const hierarchy = useMemo(() => {
+    const mains = categories.filter((c) => c.level === "main");
+    const subs = categories.filter((c) => c.level === "sub");
+    const types = categories.filter((c) => c.level === "type");
 
-  const mainCategories = (data?.categories || []).filter((c) => c.level === "main");
-  const subCategories = (data?.categories || []).filter((c) => c.level === "sub");
-  const typeCategories = (data?.categories || []).filter((c) => c.level === "type");
+    return mains.map((main) => ({
+      ...main,
+      subs: subs
+        .filter((s) => s.parent?.some((p) => p._id === main._id))
+        .map((sub) => ({
+          ...sub,
+          types: types.filter((t) =>
+            t.parent?.some((p) => p._id === sub._id)
+          ),
+        })),
+    }));
+  }, [categories]);
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure to delete this category?")) return;
-    try {
-      await deleteCategory(id);
-      // success message can be handled by toast elsewhere; keep simple here
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete");
-    }
+    if (!window.confirm("Delete this category?")) return;
+    await deleteCategory(id);
   };
 
-  const toggleMain = (id) => setExpandedMain((p) => ({ ...p, [id]: !p[id] }));
-  const toggleSub = (id) => setExpandedSub((p) => ({ ...p, [id]: !p[id] }));
-
-  const renderTypeCategories = (sub) => {
-    const types = typeCategories.filter((type) => type.parent?.some((p) => p._id === sub._id));
-    if (!types.length) return null;
-
-    return (
-      <div className="space-y-2 mt-3">
-        {types.map((type) => (
-          <div key={type._id} className="bg-white border border-gray-200 rounded p-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-gray-700 rounded-full" />
-                  <span className="font-semibold text-gray-800">{type.name}</span>
-                </div>
-                {type.tags?.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {type.tags.map((tag, i) => (
-                      <span key={i} className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs">{tag}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-2 flex-shrink-0">
-                <button
-                  className="px-3 py-1 bg-white border border-gray-200 rounded text-sm"
-                  onClick={() => {
-                    setSelectedCategory(type);
-                    setShowForm(true);
-                  }}
-                  title="Edit"
-                >
-                  Edit
-                </button>
-                <button
-                  className="px-3 py-1 bg-white border border-gray-200 rounded text-sm text-red-600"
-                  onClick={() => handleDelete(type._id)}
-                  title="Delete"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
+  const openCreateForm = () => {
+    setEditingCategory(null);
+    setShowForm(true);
   };
 
-  const renderSubCategories = (main) => {
-    const subs = subCategories.filter((sub) => sub.parent?.some((p) => p._id === main._id));
-    if (!subs.length) return null;
-
-    return (
-      <div className="space-y-3 mt-4 pl-4">
-        {subs.map((sub) => {
-          const isExpanded = !!expandedSub[sub._id];
-          const hasTypes = typeCategories.some((type) => type.parent?.some((p) => p._id === sub._id));
-
-          return (
-            <div key={sub._id} className="bg-white border border-gray-200 rounded">
-              <div className="p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    {hasTypes && (
-                      <button onClick={() => toggleSub(sub._id)} className="p-1 rounded text-gray-700">
-                        {isExpanded ? "▾" : "▸"}
-                      </button>
-                    )}
-                    <div className="w-3 h-3 bg-gray-700 rounded-full" />
-                    <h3 className="text-lg font-semibold text-gray-800 truncate">{sub.name}</h3>
-                  </div>
-
-                  <div className="flex gap-2 flex-shrink-0">
-                    <button
-                      className="px-3 py-1 bg-white border border-gray-200 rounded text-sm"
-                      onClick={() => {
-                        setSelectedCategory(sub);
-                        setShowForm(true);
-                      }}
-                      title="Edit"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="px-3 py-1 bg-white border border-gray-200 rounded text-sm text-red-600"
-                      onClick={() => handleDelete(sub._id)}
-                      title="Delete"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-
-                {hasTypes && isExpanded && <div className="pl-4">{renderTypeCategories(sub)}</div>}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
+  const openEditForm = (category) => {
+    setEditingCategory(category);
+    setShowForm(true);
   };
+
+  const closeForm = () => {
+    setEditingCategory(null);
+    setShowForm(false);
+  };
+
+  if (isLoading) return <p className="p-6">Loading categories…</p>;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-1">Category Management</h1>
-          <p className="text-gray-600">Organize and manage your category hierarchy</p>
+    <div className="bg-gray-100 min-h-screen p-6">
+      <div className="max-w-6xl mx-auto">
+
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-semibold">Category Management</h1>
+
+          {!showForm && (
+            <button
+              onClick={openCreateForm}
+              className="bg-blue-600 text-white px-4 py-2"
+            >
+              + Create Category
+            </button>
+          )}
         </div>
 
-        <button
-          className="mb-6 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded"
-          onClick={() => {
-            setSelectedCategory(null);
-            setShowForm(true);
-          }}
-        >
-          <span style={{ fontWeight: 700 }}>+</span>
-          <span>Add New Category</span>
-        </button>
+        {/* FORM (ONLY WHEN ACTIVE) */}
+        {showForm && (
+          <CategoryForm
+            categories={categories}
+            editingCategory={editingCategory}
+            onClose={closeForm}
+          />
+        )}
 
-        <div className="space-y-5">
-          {mainCategories.length === 0 && (
-            <div className="text-center py-12 bg-white rounded border border-gray-200">
-              <div className="text-gray-400 mb-4">+</div>
-              <p className="text-gray-500 text-lg font-medium">No categories yet</p>
-              <p className="text-gray-400 mt-2">Click the button above to create your first category</p>
+        {/* HIERARCHY LIST (ONLY WHEN FORM IS CLOSED) */}
+        {!showForm && (
+          <div className="bg-white border rounded shadow">
+            <div className="px-6 py-4 border-b bg-gray-50 font-medium">
+              Category Hierarchy
             </div>
-          )}
 
-          {mainCategories.map((main) => {
-            const isExpanded = !!expandedMain[main._id];
-            const hasSubs = subCategories.some((sub) => sub.parent?.some((p) => p._id === main._id));
+            <div className="p-6 space-y-4 text-sm">
+              {hierarchy.length === 0 && (
+                <p className="text-gray-500">No categories found</p>
+              )}
 
-            return (
-              <div key={main._id} className="bg-white rounded border border-gray-200 overflow-hidden">
-                <div style={{ background: "#2563eb" }} className="p-4 text-white">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {hasSubs && (
-                        <button onClick={() => toggleMain(main._id)} className="p-1.5 rounded text-white">
-                          {isExpanded ? "▾" : "▸"}
-                        </button>
-                      )}
-                      <div className="w-3 h-3 bg-white rounded-full" />
-                      <h2 className="text-xl font-bold truncate">{main.name}</h2>
+              {hierarchy.map((main) => (
+                <div key={main._id}>
+                  {/* MAIN */}
+                  <div className="flex justify-between items-center bg-blue-50 px-4 py-2 rounded">
+                    <div className="font-semibold text-blue-800">
+                      📁 {main.name}
                     </div>
 
-                    <div className="flex gap-2 flex-shrink-0">
+                    <div className="space-x-2">
                       <button
-                        className="px-3 py-1 bg-white/20 text-white rounded text-sm"
-                        onClick={() => {
-                          setSelectedCategory(main);
-                          setShowForm(true);
-                        }}
-                        title="Edit"
+                        className="text-blue-600"
+                        onClick={() => openEditForm(main)}
                       >
                         Edit
                       </button>
                       <button
-                        className="px-3 py-1 bg-red-600 text-white rounded text-sm"
+                        className="text-red-600"
                         onClick={() => handleDelete(main._id)}
-                        title="Delete"
                       >
                         Delete
                       </button>
                     </div>
                   </div>
+
+                  {/* SUBS */}
+                  <div className="ml-6 mt-2 space-y-2">
+                    {main.subs.map((sub) => (
+                      <div key={sub._id}>
+                        <div className="flex justify-between items-center bg-gray-100 px-4 py-2 rounded">
+                          <div className="font-medium">📂 {sub.name}</div>
+
+                          <div className="space-x-2">
+                            <button
+                              className="text-blue-600"
+                              onClick={() => openEditForm(sub)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="text-red-600"
+                              onClick={() => handleDelete(sub._id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* TYPES */}
+                        <div className="ml-6 mt-2 space-y-1">
+                          {sub.types.map((type) => (
+                            <div
+                              key={type._id}
+                              className="flex justify-between items-center px-4 py-1"
+                            >
+                              <div>📄 {type.name}</div>
+
+                              <div className="space-x-2">
+                                <button
+                                  className="text-blue-600"
+                                  onClick={() => openEditForm(type)}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="text-red-600"
+                                  onClick={() => handleDelete(type._id)}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-
-                {hasSubs && isExpanded && <div className="p-4">{renderSubCategories(main)}</div>}
-              </div>
-            );
-          })}
-        </div>
-
-        {showForm && (
-          <CategoryForm category={selectedCategory} onClose={() => setShowForm(false)} />
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>
