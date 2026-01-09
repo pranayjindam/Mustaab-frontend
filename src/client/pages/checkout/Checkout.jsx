@@ -84,9 +84,28 @@ export default function Checkout() {
               token,
             }).unwrap();
 
-            if (verifyData.success) {
-              navigate(`/orders/success/${verifyData.order._id}`);
-            } else {
+if (verifyData.success) {
+
+  if (window.fbq) {
+    window.fbq("track", "Purchase", {
+      value: totalPrice,
+      currency: "INR",
+      content_type: "product",
+      contents: formattedItems.map(item => ({
+        id: item.product,
+        quantity: item.quantity,
+      })),
+    });
+  }
+
+  // 🔴 IMPORTANT: allow pixel to send
+  setTimeout(() => {
+    navigate(`/orders/success/${verifyData.order._id}`);
+  }, 800); // 0.8 second delay
+}
+
+
+ else {
               alert("Payment verification failed");
             }
           } catch (err) {

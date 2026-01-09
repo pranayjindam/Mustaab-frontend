@@ -15,43 +15,38 @@ const HomeCarousel = () => {
     useGetCarouselImagesQuery();
 
   const images = carouselData?.data || [];
-
-  // Track active slide for custom dots
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // AliceCarousel responsive config
+  // Always single item
   const responsive = {
     0: { items: 1 },
-    640: { items: 1 },
     768: { items: 1 },
     1024: { items: 1 },
   };
 
-  // Navigation function
   const goToUrl = (url) => {
     if (!url) return;
-
-    // External link
     if (url.startsWith("http")) {
       window.location.href = url;
     } else {
-      // Internal route
       navigate(url);
     }
   };
 
-  const items = images.map((item, index) => (
+  // 🔥 UPDATED ITEMS (NO CROPPING)
+  const items = images.map((item) => (
     <div
       key={item._id}
-      className="relative w-full aspect-[16/9] sm:aspect-[16/8] md:aspect-[16/7]"
+      className="relative w-full h-[220px] sm:h-[300px] md:h-[420px]"
     >
       <img
         src={item.image}
         alt="carousel"
-        onDragStart={handleDragStart}
         loading="lazy"
-        className="w-full h-full object-cover rounded-xl shadow-lg cursor-pointer"
+        onDragStart={handleDragStart}
         onClick={() => goToUrl(item.redirectUrl)}
+      className="w-full h-full object-contain bg-white rounded-xl cursor-pointer"
+
       />
     </div>
   ));
@@ -59,10 +54,17 @@ const HomeCarousel = () => {
   const handlePrev = () => carouselRef.current?.slidePrev();
   const handleNext = () => carouselRef.current?.slideNext();
 
-  if (isLoading)
+  if (isLoading) {
     return <div className="text-center py-20">Loading carousel...</div>;
-  if (isError)
-    return <div className="text-center py-20 text-red-500">Failed to load carousel.</div>;
+  }
+
+  if (isError) {
+    return (
+      <div className="text-center py-20 text-red-500">
+        Failed to load carousel.
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full mx-auto my-8">
@@ -79,36 +81,37 @@ const HomeCarousel = () => {
         onSlideChanged={({ item }) => setActiveIndex(item)}
       />
 
-      {/* Navigation Buttons */}
+      {/* Left Arrow */}
       <button
         onClick={handlePrev}
         className="absolute left-2 top-1/2 -translate-y-1/2 
-          bg-black/50 text-white px-3 py-2 rounded-full shadow 
+          bg-black/50 text-white px-3 py-2 rounded-full 
           hover:bg-black/70 z-10"
       >
         ❮
       </button>
 
+      {/* Right Arrow */}
       <button
         onClick={handleNext}
         className="absolute right-2 top-1/2 -translate-y-1/2 
-          bg-black/50 text-white px-3 py-2 rounded-full shadow 
+          bg-black/50 text-white px-3 py-2 rounded-full 
           hover:bg-black/70 z-10"
       >
         ❯
       </button>
 
-      {/* Custom Dots */}
+      {/* Dots */}
       <div className="absolute bottom-3 w-full flex justify-center gap-2 z-20">
         {images.map((_, idx) => (
           <div
             key={idx}
-            className={`h-3 w-3 rounded-full transition-all duration-300 ${
+            className={`h-3 w-3 rounded-full ${
               idx === activeIndex
-                ? "bg-white scale-125 shadow-lg"
-                : "bg-white/40 hover:bg-white"
+                ? "bg-white scale-125"
+                : "bg-white/40"
             }`}
-          ></div>
+          />
         ))}
       </div>
     </div>
