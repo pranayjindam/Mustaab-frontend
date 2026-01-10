@@ -163,7 +163,7 @@ const handleBuyNow = () => {
     <>
       <Navbar />
 
-      <main className="pt-24 w-full px-4 md:px-8 max-w-[1400px] mx-auto">
+      <main className="pt-0 w-full px-4 md:px-8 max-w-[1400px] mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
           {/* Images */}
           <div>
