@@ -23,7 +23,7 @@ export default function Checkout() {
   const [verifyRazorpayPayment] = useVerifyRazorpayPaymentMutation();
 
   useEffect(() => {
-    if (!token) navigate("/login");
+    if (!token) navigate("/signin");
   }, [token, navigate]);
 
   if (!token) return null;

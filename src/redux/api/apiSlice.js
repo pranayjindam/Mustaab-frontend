@@ -27,13 +27,14 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 
     if (!isPublicEndpoint) {
       api.dispatch(logout());
-      // better UX: avoid full page reload
-      window.history.pushState({}, "", "/signin");
+      // ❌ DO NOT navigate here
     }
   }
 
   return result;
 };
+
+
 
 
 export const apiSlice = createApi({

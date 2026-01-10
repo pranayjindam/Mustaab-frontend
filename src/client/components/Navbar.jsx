@@ -34,6 +34,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const searchRef = useRef(null);
+const { isAuthenticated } = useSelector((s) => s.auth);
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -45,11 +46,23 @@ export default function Navbar() {
 // Wishlist count
 // fetch wishlist (keep your existing hook call)
 // Wishlist Count
-const { data: wishlistData } = useGetWishlistQuery();
-const wishlistCount = wishlistData?.products?.length || 0;
-// Cart: fetch from API
-const { data: cartData } = useGetCartQuery();
-const cartItemsCount = cartData?.items?.length || 0; // number of distinct products
+const { data: wishlistData } = useGetWishlistQuery(undefined, {
+  skip: !isAuthenticated,
+});
+
+const { data: cartData } = useGetCartQuery(undefined, {
+  skip: !isAuthenticated,
+});
+
+const wishlistCount = isAuthenticated
+  ? wishlistData?.products?.length || 0
+  : 0;
+
+const cartItemsCount = isAuthenticated
+  ? cartData?.items?.length || 0
+  : 0;
+
+
 const cartTotalQty = (cartData?.items || []).reduce((sum, it) => sum + (it.quantity || 0), 0); // total qty
 
 
